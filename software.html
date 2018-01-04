@@ -66,6 +66,106 @@
   </div>
 
 
+<div>
+<h3>Bespin</h3>
+
+<p><a href="http://bespin.io">Bespin</a> is a software library that
+contains reference implementations of "big data" algorithms in
+MapReduce and Spark. It provides sample code for many of the
+algorithms we'll be discussing in class and also provides starting
+points for the assignments. You'll want to familiarize yourself
+with the library.</p>
+
+<h3>Linux Student CS Environment</h3>
+
+<p>Software needed for the course can be found in
+the <code>linux.student.cs.uwaterloo.ca</code> environment. We will
+ensure that everything works correctly in this environment.</p>
+
+<p><b>TL;DR.</b> Just set up your environment as follows (in bash; adapt accordingly for your shell of choice):</p>
+
+<pre>
+export PATH=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin:/u3/cs451/packages/spark/bin:/u3/cs451/packages/hadoop/bin:/u3/cs451/packages/maven/bin:/u3/cs451/packages/scala/bin:$PATH
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+</pre>
+
+<p>You'll want to add the above lines to your shell config file (e.g.,
+<code>.bash_profile</code>).</p>
+
+<p><b>Gory Details.</b> For the course we need Java, Scala, Hadoop,
+Spark, and Maven. Java is already available in the default user
+environment (but we need to point to the right version). The rest of
+the packages are installed in <code>/u3/cs451/packages/</code>. The
+directories <code>scala</code>, <code>hadoop</code>, <code>spark</code>,
+and <code>maven</code> are actually symlinks to specific
+versions. This is so that we can transparently change the links to
+point to different versions if necessary without affecting downstream
+users. Currently, the versions are:</p>
+
+<ul>
+  <li>Java: 1.8.0_151</li>
+  <li>Scala: 2.11.8</li>
+  <li>Hadoop: 2.7.5</li>
+  <li>Spark: 2.1.1</li>
+  <li>Maven: 3.3.9</li>
+</ul>
+
+</div>
+
+<div>
+<h3>Installing Software Locally</h3>
+
+<p>You may wish to install all necessary software packages locally on
+your own machine. We provide basic installation instructions here,
+but the course staff cannot provide technical support due to the size of
+the class and the idiosyncrasies of individual systems. We will be
+responsible for making sure everything works properly in the Linux
+Student CS Environment (above), but if you want to install everything on your
+own machine for convenience, you're on your own.</p>
+
+<p>Both Hadoop and Spark work fine on Mac OS X and Linux, but may be
+difficult to get working on Windows. Note that to run Hadoop and Spark
+on your local machine comfortably, you'll need at least 4 GB memory
+and plenty of disk space (at least 10 GB).</p>
+
+<p>You'll also need Java (JDK 1.8), Scala (use Scala 2.11.x), and
+Maven (any reasonably recent version).</p>
+
+<p>The versions of the packages installed
+on <code>linux.student.cs.uwaterloo.ca</code> are as follows:</p>
+
+<ul>
+
+ <li><a href="http://mirror.its.dal.ca/apache/hadoop/common/hadoop-2.7.5/hadoop-2.7.5.tar.gz">Hadoop 2.7.5</a></li>
+ <li><a href="https://archive.apache.org/dist/spark/spark-2.1.1/spark-2.1.1-bin-hadoop2.7.tgz">Spark 2.1.1</a></li>
+
+</ul>
+
+<p>Download the above packages, unpack the tarball, add their
+respective <code>bin/</code> directories to your path (and your shell
+config), and you should be go to go.</p>
+
+<p>Alternatively, you can also install the various packages using a
+package manager, e.g., <code>apt-get</code>, MacPorts, etc. However,
+make sure you get the right version.</p>
+
+</div>
+
+<div>
+<h3>Altiscale Cluster</h3>
+
+<div style="float:right; padding-left:25px"><img src="images/altiscale-logo.png" alt="Altiscale Logo"/></div>
+
+<p>In addition to running "toy" Hadoop on a single machine (which
+obviously defeats the point of a distributed framework), we're going
+to be playing with a modest cluster thanks to the generous support of
+Altiscale, which is a "Hadoop-as-a-service" provider. You'll be
+getting an email directly from Altiscale with account information.</p>
+
+<p>More details to follow...</p>
+
+</div>
+
 <div style="padding-bottom: 100px"></div>
 
     </div><!-- /.container -->
