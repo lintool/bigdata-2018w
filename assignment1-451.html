@@ -85,8 +85,163 @@
   </div>
 
 
-<h3>Assignment 1 <small>due 2:30pm January 23</small></h3>
+<h3>Assignment 1: Counting in MapReduce <small>due 2:30pm January 23</small></h3>
 
+<p>By now, you should already be familiar with the Hadoop execution
+environment (e.g., submitting jobs) and using Maven to organize your
+assignments. You will be working in the same repo as before, except
+that everything should go into the package namespace
+<code>ca.uwaterloo.cs451.a1</code>.</p>
+
+<p>Note that the point of assignment 0 was to familiarize you with
+GitHub and the Hadoop development environment. Starting this
+assignment, excuses along the lines of "I couldn't get my repo set up
+properly", "I couldn't figure out how to push my assignment to
+GitHub", etc. will not be accepted. It is your responsibility to sort
+through any mechanics issue you have.</p>
+
+<p>Before starting this assignment, it is <i>highly recommended</i>
+that you look at the implementations of bigram relative frequency and
+co-occurrence matrix computation
+in <a href="http://bespin.io">Bespin</a>.</p>
+
+<p>In this assignment you'll be
+computing <a href="http://en.wikipedia.org/wiki/Pointwise_mutual_information">pointwise
+mutual information</a>, which is a function of two events <i>x</i>
+and <i>y</i>:</p>
+
+<p><img width="200" src="assignments/PMI.png" alt="PMI equation"/></p>
+
+<p>The larger the magnitude of PMI for <i>x</i> and <i>y</i> is,
+the more information you know about the probability of seeing <i>y</i>
+having just seen <i>x</i> (and vice-versa, since PMI is
+symmetrical). If seeing <i>x</i> gives you no information about seeing
+<i>y</i>, then <i>x</i> and <i>y</i> are independent and the PMI is
+zero.</p>
+
+<p>Write two separate implementations (more details below) that
+computes the PMI of words in the
+<code>data/Shakespeare.txt</code> collection that's used in the Bespin
+demos and the previous assignment. Your implementation should be in
+Java. To be more specific, the event we're after is <i>x</i> occurring
+on a line in the file (the denominator in the above equation)
+or <i>x</i> and <i>y</i> co-occurring on a line (the numerator in the
+above equation). That is, if a line contains "A B C", then the
+co-occurring pairs are:</p>
+
+<ul>
+  <li>(A, B)</li>
+  <li>(A, C)</li>
+  <li>(B, A)</li>
+  <li>(B, C)</li>
+  <li>(C, A)</li>
+  <li>(C, B)</li>
+</ul>
+
+<p>If the line contains "A A B C", the co-occurring pairs are still
+the same as above; same if the line contains "A B C A B C"; or any
+combinations of A, B, and C in any order.</p>
+
+<p>A few additional specifications:</p>
+
+<ul>
+
+<li>In addition to PMI, it's also important to know how many times the
+pair actually co-occurs, so you'll include this information in the
+output (format explained below). To reduce the number of spurious
+pairs, we want to be able to specify a command-line
+option <code>-threshold</code> to indicate the threshold of
+co-occurrence. For example, if we specify <code>-threshold 10</code>,
+then we are only interested in pairs of words that co-occur in ten or
+more lines.</li>
+
+<li>To reduce the computational complexity of the problem, we are only
+going to consider up to the first 40 words on each line (using the
+definition of "word" below).</li>
+
+<li>Just so everyone's answer is consistent, please use
+log base 10.</li>
+
+<li>Use the same definition of "word" as in the word count demo.</li>
+
+</ul>
+
+<p>To ensure consistent tokenization, use the Tokenizer class provided
+in Bespin that you've used for assignment 0.</p>
+
+<p>You will build two versions of the program (put both in
+package <code>ca.uwaterloo.cs451.a1</code>):</p>
+
+<ol>
+
+  <li>A "pairs" implementation. The implementation must use
+  combiners. Name this implementation <code>PairsPMI</code>. In the
+  final output, the key should be a co-occurring pair, e.g., (A, B),
+  and the value should be a pair (PMI, count) denoting its PMI
+  and co-occurrence count.</li>
+
+  <li>A "stripes" implementation.  The implementation must use
+  combiners. Name this implementation <code>StripesPMI</code>.  In the
+  final output, the key should be a word (e.g., A), and the value
+  should be a map, where each of the keys is a co-occurring word (e.g.,
+  B), and the value is a pair (PMI, count) denoting its PMI and
+  co-occurrence count.</li>
+
+</ol>
+
+<p>Since PMI is symmetrical, PMI(x, y) = PMI(y, x). However, it's
+actually easier in your implementation to compute both values, so
+don't worry about duplicates. Also, use <code>TextOutputFormat</code>
+so the results of your program are human readable.</p>
+
+<p>Make sure that the pairs implementation and the stripes
+implementation give the same answers!</p>
+
+<p>Answer the following questions:</p>
+
+<p><b>Question 1.</b> (6 points) <i>Briefly</i> describe in prose your solution,
+both the pairs and stripes implementation. For example: how many
+MapReduce jobs? What are the input records? What are the intermediate
+key-value pairs? What are the final output records? A paragraph for
+each implementation is about the expected length.</p>
+
+<p><b>Question 2.</b> (2 points) What is the running time of the complete pairs
+implementation? What is the running time of the complete stripes
+implementation? (Tell me where you ran these experiments,
+e.g., <code>linux.student.cs.uwaterloo.ca</code> or your own
+laptop.)</p>
+
+<p><b>Question 3.</b> (2 points) Now disable all combiners. What is the running
+time of the complete pairs implementation now? What is the running
+time of the complete stripes implementation? (Tell me where you ran
+these experiments, e.g., <code>linux.student.cs.uwaterloo.ca</code> or
+your own laptop.)</p>
+
+<p><b>Question 4.</b> (3 points) How many distinct PMI pairs did you
+extract? Use <code>-threshold 10</code>.</p>
+
+<p><b>Question 5.</b> (6 points) What's the pair (x, y) (or pairs if
+there are ties) with the highest PMI? Use <code>-threshold
+10</code>. Similarly, what's the pair with the lowest (negative) PMI?
+Use the same threshold. Write a sentence or two to explain these
+results.</p>
+
+<p><b>Question 6.</b> (6 points) What are the three words that have
+the highest PMI with "tears" and "death"? <code>-threshold
+10</code>. And what are the PMI values?</p>
+
+<p>Make sure that your code runs in the Linux Student CS environment
+(even if you do development on your own machine), which is where we
+will be doing the grading. "But it runs on my laptop!" will not be
+accepted as an excuse if we can't get your code to run.</p>
+
+<p>Note that you can compute the answer to questions 4&mdash;6 however
+you wish: a helper Java program, a Python script, command-line
+one-liner, etc.</p>
+
+<h4 style="padding-top: 10px">Running on the Altiscale cluster</h4>
+
+<p>More to come...</p>
 
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>

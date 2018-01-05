@@ -84,8 +84,52 @@
     </ul>
   </div>
 
+<h3>Assignment 2: Counting in Spark <small>due 2:30pm January 30</small></h3>
 
-<h3>Assignment 2 <small>due 2:30pm January 30</small></h3>
+<p>In this assignment you will do two things:</p>
+
+<ol>
+
+<li>"Port" the MapReduce implementations of the bigram frequency count
+program from <a href="http://bespin.io">Bespin</a> over to Spark (in
+Scala).</li>
+
+<li>"Port" the MapReduce implementations
+of <a href="assignment1-451.html">assignment 1</a> over to Spark (in Scala).</li>
+
+</ol>
+
+<h4 style="padding-top: 10px">Bigram Relative Frequency</h4>
+
+<p>Your starting points
+are <code>ComputeBigramRelativeFrequencyPairs</code>
+and <code>ComputeBigramRelativeFrequencyStripes</code> in
+package <code>io.bespin.java.mapreduce.bigram</code> (in Java).
+You are welcome to build on the <code>BigramCount</code> (Scala)
+implementation <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/spark/bigram/BigramCount.scala">here</a>
+for tokenization and "boilerplate" code like command-line argument
+parsing. To be consistent in tokenization, you should use the
+<code>Tokenizer</code> trait
+<a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/util/Tokenizer.scala">here</a>.</p>
+
+<p>Put your code in the
+package <code>ca.uwaterloo.cs451.a2</code>. Since
+you'll be writing Scala code, your source files should go
+into <code>src/main/scala/ca/uwaterloo/cs451/a2/</code>.
+The repository is designed so that Scala/Spark code will also
+compile with the same Maven build command:</p>
+
+<pre>
+$ mvn clean package
+</pre>
+
+<p>Following the Java implementations, you will write both a "pairs"
+and a "stripes" implementation in Spark. Not that although Spark has a
+different API than MapReduce, the algorithmic concepts are still very
+much applicable. Your pairs and stripes implementation should follow
+the same logic as in the MapReduce implementations. In particular,
+your program should only take one pass through the input data.</p>
+
 
 
 
