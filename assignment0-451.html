@@ -167,8 +167,8 @@ $ mvn clean package
 demo program in your own repository:</p>
 
 <pre>
-$ hadoop jar target/assignments-1.0.jar \
-   ca.uwaterloo.cs451.a0.WordCount -input data/Shakespeare.txt -output wc
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a0.WordCount \
+   -input data/Shakespeare.txt -output wc
 </pre>
 
 <p>You should be running this in the Linux student CS environment or
@@ -224,9 +224,168 @@ code runs there even if you do development on your own machine.</p>
 
 <h4 style="padding-top: 10px">Using the Altiscale Cluster</h4>
 
-<p>More to come...</p>
+<p>The <a href="software.html">software page</a> has details on
+getting started with the Altiscale cluster. Register your account and
+follow instructions to set up ssh into the "workspace".  Make sure
+you've properly set up the proxy to view the cluster Resource Manager
+(RM) webapp
+at <a href="http://rm-ia.s3s.altiscale.com:8088/cluster/"><code>http://rm-ia.s3s.altiscale.com:8088/cluster/</code></a>.
+Getting access to the RM webapp is important&mdash;you'll need it to
+track your job status and for debugging purposes.</p>
 
-<div style="padding-bottom: 100px"></div>
+<p>Once you've ssh'ed into the workspace, you should be able to run
+your copy of the word count program (copied over from Bespin)
+from your assignments repo <code>bigdata2018w/</code>:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a0.WordCount \
+   -input /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt -output wc-jmr-combiner
+</pre>
+
+<p>Note that we're running word count over a larger collection here: a
+10% sample of English Wikipedia totaling 1.6 GB (here's a chance to
+exercise your newly-acquired HDFS skills to confirm for yourself).</p>
+
+<p><b>Question 2.</b> Run word count on the Altiscale cluster and make
+sure you can access the Resource Manager webapp. What is your
+application id? It looks something like
+<code>application_XXXXXXXXXXXXX_XXXX</code> and can be found in the
+Resource Manager webapp. If you ran word count multiple times, any id
+will do.</p>
+
+<p><b>Question 3.</b> For this word count job, how many mappers ran in
+parallel?</p>
+
+<p><b>Question 4.</b> From the word count program, how many times does
+"waterloo" appear in the sample Wikipedia collection?</p>
+
+<p>Now run your <code>PerfectX</code> program on the sample Wikipedia
+data:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a0.WordCount \
+   -input /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt -output cs451-lintool-a0-wiki
+</pre>
+
+<p><b>Question 5.</b> In the sample Wikipedia collection, what are the
+10 most frequent <i>x</i>'s and how many times does each appear?
+(Answer this question with command-line tools.)</p>
+
+<p>Note that the Altiscale cluster is a shared resource, and how fast
+your jobs complete will depend on how busy it is. You're advised to
+begin the assignment early as to avoid long job queues. "I wasn't able
+to complete the assignment because there were too many jobs running on
+the cluster" will not be accepted as an excuse if your assignment is
+late.</p>
+
+<p>You can run the above instructions using
+<a href="assignments/check_assignment0_public_altiscale.py"><code>check_assignment0_public_altiscale.py</code></a> as follows:</p>
+
+<pre>
+$ wget http://lintool.github.io/bigdata-2018w/assignments/check_assignment0_public_altiscale.py
+$ chmod +x check_assignment0_public_altiscale.py
+$ ./check_assignment0_public_altiscale.py lintool
+</pre>
+
+<p>We'll be using exactly this script to check your
+assignment on the Altiscale cluster.</p>
+
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>At this point, you should have a GitHub
+repo <code>bigdata2018w/</code> and inside the repo, you should have
+the word count program copied over from Bespin, and the new
+perfect <i>x</i> count implementation, along with
+your <code>pom.xml</code>. Commit these files. Next, create a file
+called <code>assignment0.md</code>
+inside <code>bigdata2018w/</code>. In that file, put your answers to
+the above questions (1&mdash;5). Use the Markdown annotation format:
+here's
+a <a href="http://daringfireball.net/projects/markdown/basics">simple
+guide</a>.</p>
+
+<p><b>Note:</b> there is no need to commit <code>data/</code>
+or <code>target/</code> (or any results that you may have generated),
+so your repo should be very compact &mdash; it should only have five
+files: two Java source files, <code>pom.xml</code>,
+and <code>assignment0.md</code>. You can add a <code>.gitignore</code>
+file if you wish.</p>
+
+<p>For this and all subsequent assignments, make sure everything is on
+the master branch. Push your repo to GitHub. You can verify that it's
+there by logging into your GitHub account in a web browser: your
+assignment should be viewable in the web interface.</p>
+
+<p>This and subsequent assignments contain two parts, one that can be
+completed locally, and another that requires the Altiscale
+cluster. For the first, make sure that your code runs in the Linux
+Student CS environment (even if you do development on your own
+machine), which is where we will be doing the marking. "But it runs on
+my laptop!" will not be accepted as an excuse if we can't get your
+code to run.</p>
+
+<p>Almost there! Add the
+user <a href="https://github.com/teachtool">teachtool</a> a
+collaborator to your repo so that we can access it (under settings in
+the main web interface on your repo). Note: do <b>not</b> add my
+primary GitHub
+account <a href="https://github.com/lintool">lintool</a> as a
+collaborator.</p>
+
+<p>Finally, you need to tell us your GitHub account so we can link it
+to you. Submit your information <a href="https://goo.gl/forms/LFrPKoE2AHr36x7G2">here</a>.</p>
+
+<p>And that's it!</p>
+
+<p>To give you an idea of how we'll be marking this and future
+assignments&mdash;we will clone your repo and use the above check
+scripts:</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment0_public_linux.py"><code>check_assignment0_public_linux.py</code></a>
+in the Linux Student CS environment.</li>
+
+<li><a href="assignments/check_assignment0_public_altiscale.py"><code>check_assignment0_public_altiscale.py</code></a> on the Altiscale cluster.</li>
+
+</ul>
+
+<p>We'll make sure the data files are in the right place, and once the
+code completes, we will verify the output. It is highly recommend that
+you run these check scripts: if it doesn't work for you, it won't work
+for us either.</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>This assignment is worth a total of 20 points, broken down as
+follows:</p>
+
+<ul>
+
+  <li>The questions above are worth a total of 10 points.</li>
+
+  <li>Getting your code to compile and successfully run is worth
+  another 8 points (4 points each for <code>PerfectX</code> in the
+  Linux student CS environment and on Altiscale). We will make a
+  minimal effort to fix <i>trivial</i> issues with your code (e.g., a
+  typo)&mdash;and deduct points&mdash;but <b>will not</b> spend time
+  debugging your code. It is your responsibility to make sure your
+  code runs: we have taken care to specify exactly how we will run
+  your code&mdash;if anything is unclear, it is your responsibility to
+  seek clarification.  In order to get a perfect score of 8 for this
+  portion of the grade, we should be able to run the two public check
+  scripts above successfully without any errors.</li>
+
+  <li>Another 2 points is allotted to us verifying the output of your
+  program in ways that we will not tell you. We're giving you the
+  "public" versions of the check scripts; we'll run a "private"
+  version to examine your output further (i.e., think blind test
+  cases).</li>
+
+</ul>
+
+<p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
     </div><!-- /.container -->
 
