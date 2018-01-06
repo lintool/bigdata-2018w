@@ -20,7 +20,7 @@ def check_a0(u):
         "-input", "/shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt",
         "-output", "cs451-"+u+"-a0-wiki" ])
   print("Question 5.")
-  call("hadoop fs -cat cs451-"+u+"-a0-wiki/part* | sort -k 2 -n -r | head -10",shell=True)
+  call("hadoop fs -cat cs451-"+u+"-a0-wiki/part* | sort -k 2 -n -r | head", shell=True)
 
 if __name__ == "__main__":
   try:

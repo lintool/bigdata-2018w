@@ -20,7 +20,7 @@ def check_a0(u):
         "-input", "data/Shakespeare.txt",
         "-output", "cs451-"+u+"-a0-shakespeare" ])
   print("Question 1.")
-  call("hadoop fs -cat cs451-"+u+"-a0-shakespeare/part-r-00000 | sort -k 2 -n -r | head -1",shell=True)
+  call("hadoop fs -cat cs451-"+u+"-a0-shakespeare/part-r-00000 | sort -k 2 -n -r | head", shell=True)
 
 if __name__ == "__main__":
   try:
