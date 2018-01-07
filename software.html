@@ -162,7 +162,49 @@ to be playing with a modest cluster thanks to the generous support of
 Altiscale, which is a "Hadoop-as-a-service" provider. You'll be
 getting an email directly from Altiscale with account information.</p>
 
-<p>More details to follow...</p>
+<p>Follow the instructions from the email:</p>
+
+<ol>
+
+<li>Set up your web profile at <a href="http://portal.altiscale.com/">Altiscale Portal</a>.</li>
+
+<li>Follow these instructions to upload your ssh keys: <a href="https://documentation.altiscale.com/uploading-public-key">Uploading and Managing Your Public Key</a></li>
+
+<li>Follow these instructions to ssh into the "workspace": <a href="https://documentation.altiscale.com/connecting-with-ssh">Connecting to the Workbench Using SSH</a>. The workspace is the node from which you submit MapReduce/Spark jobs; it's also where you'll check out code, inspect HDFS data, etc. In class I sometimes refer to this as the "submit node".</li>
+
+<li>Follow these instructions to access the cluster webapps: <a href="https://documentation.altiscale.com/accessing-web-uis-socks">Accessing Web UIs Through a SOCKS Proxy</a>. In particular, you'll need to access the Resource Manager webapp to examine the status of your running jobs at <a href="http://rm-ia.s3s.altiscale.com:8088/cluster/"><code>http://rm-ia.s3s.altiscale.com:8088/cluster/</code></a>.</li>
+
+</ol>
+
+<p><b>The TL;DR version.</b> Configure your <code>~/.ssh/config file</code> as follows:</p>
+
+<pre>
+Host altiscale
+User YOUR_USERNAME
+Hostname ia.z42.altiscale.com
+Port 1763
+IdentityFile ~/.ssh/id_rsa
+Compression yes
+ServerAliveInterval 15
+DynamicForward localhost:1080
+TCPKeepAlive yes
+Protocol 2,1
+</pre>
+
+<p>And you should be able to ssh into the workspace:</p>
+
+<pre>
+ssh altiscale
+</pre>
+
+<p>That should do it!</p>
+
+<p><b>Running Spark on Altiscale.</b>
+
+<p>For additional details, consult the
+<a href="https://documentation.altiscale.com/spark-2-0-with-altiscale">Altiscale
+Spark documentation</a>.</p>
+
 
 </div>
 
