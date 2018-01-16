@@ -4,7 +4,7 @@ CS 451 Data-Intensive Distributed Computing (Winter 2018):
 Assignment 1 public check script for the Linux Student CS environment
 
 Sample usage:
-$ ./check_assignment0_public_linux.py lintool
+$ ./check_assignment1_public_linux.py lintool
 """
 
 import sys
