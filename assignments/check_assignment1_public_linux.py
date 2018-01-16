@@ -19,7 +19,7 @@ except ImportError:
   DEVNULL = open(os.devnull, 'wb')
 
 def check_a1(u):
-  """Run Assignment 0 in the Linux Student CS environment"""
+  """Run Assignment 1 in the Linux Student CS environment"""
   call(["mvn", "clean", "package"])
   call([ "hadoop", "jar", "target/assignments-1.0.jar", "ca.uwaterloo.cs451.a1.PairsPMI",
          "-input", "data/Shakespeare.txt",
