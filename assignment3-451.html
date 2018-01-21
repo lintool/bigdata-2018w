@@ -87,6 +87,243 @@
 
 <h3>Assignment 3 <small>due 2:30pm February 6</small></h3>
 
+<p>This assignment is to be completed in MapReduce in Java. You will
+be working in the same repo as before, except that everything should
+go into the package namespace
+<code>ca.uwaterloo.cs451.a3</code>.</p>
+
+<p>Look at the inverted indexing and boolean retrieval implementation
+in <a href="http://bespin.io">Bespin</a>. Make sure you understand the
+code. Starting from the inverted indexing
+baseline <code>BuildInvertedIndex</code>, modify the indexer code in
+the following ways:</p>
+
+<p><b>1. Index Compression.</b> The index should be compressed using
+<code>VInts</code>:
+see <code>org.apache.hadoop.io.WritableUtils</code>. You should also
+use gap-compression (i.e., delta-compression) techniques as appropriate.</p>
+
+<p><b>2. Buffering postings.</b> The baseline indexer implementation
+currently buffers and sorts postings in the reducer, which as we
+discussed in class is not a scalable solution. Address this
+scalability bottleneck using techniques we discussed in class and in
+the textbook.</p>
+
+<p><b>3. Term partitioning.</b> The baseline indexer implementation
+currently uses only one reducer and therefore all postings lists are
+shuffled to the same node and written to HDFS in a single
+partition. Change this so we can specify the number of reducers
+(hence, partitions) as a command-line argument. This is, of course,
+easy to do, but we need to make sure that the searcher understands
+this partitioning also.</p>
+
+<p><b>Note:</b> The major scalability issue is
+buffering <i>uncompressed</i> postings in memory. In your solution,
+you'll still end up buffering each postings list, but
+in <i>compressed</i> form (raw bytes, no additional object
+overhead). This is fine because if you use the right compression
+technique, the postings lists are quite small. As a data point, on a
+collection of 50 million web pages, 2GB heap is more than enough for a
+full <i>positional</i> index (and in this assignment you're not asked
+to store positional information in your postings).</p>
+
+<p>To go into a bit more detail: in the reference implementation, the
+final key type is <code>PairOfWritables&lt;IntWritable,
+ArrayListWritable&lt;PairOfInts&gt;&gt;</code>. The most obvious idea
+is to change that into something
+like <code>PairOfWritables&lt;VIntWritable,
+ArrayListWritable&lt;PairOfVInts&gt;&gt;</code>. This does not work!
+The reason is that you will still be materializing each posting, i.e.,
+all <code>PairOfVInts</code> objects in memory. This translates into a
+Java object for every posting, which is wasteful in terms of memory
+usage and will exhaust memory pretty quickly as you scale. In other
+words, you're <i>still</i> buffering objects&mdash;just inside
+the <code>ArrayListWritable</code>.
+
+<p>This new indexer should be
+named <code>BuildInvertedIndexCompressed</code>. This new class should
+be in the package <code>ca.uwaterloo.cs451.a3</code>. Make
+sure it works on the Shakespeare collection.</p>
+
+<p>Modify <code>BooleanRetrieval</code> so that it works with the new
+compressed indexes. Name this new
+class <code>BooleanRetrievalCompressed</code>. This new class should
+be in the same package as above and give the same
+output as the old version.</p>
+
+<p>Use <code>BuildInvertedIndex</code>
+and <code>BooleanRetrieval</code> from Bespin as your starting
+points. That is, copy over into your repo, rename, and begin your
+assignment from there. Don't unnecessarily change code not directly
+related to points #1-#3 above. In particular, <b>do not</b> change how
+the documents are tokenized, etc. in <code>BuildInvertedIndex</code>
+(otherwise there's no good way to check for the correctness of your
+algorithm). Also, <b>do not</b> change the <code>fetchLine</code>
+method in <code>BooleanRetrieval</code> so that everyone's output
+looks the same.</p>
+
+<p>In more detail, make sure that you can build the inverted index
+with the following command (make sure your implementation runs in the
+Linux student CS environment, as that is where we will be doing the
+marking):</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BuildInvertedIndexCompressed \
+   -input data/Shakespeare.txt -output cs451-lintool-a3-index-shakespeare -reducers 4
+</pre>
+
+<p>We should be able to control the number of partitions (#3 above)
+with the <code>-reducers</code> option. That is, the code should give
+the correct results no matter what we set the value to.</p>
+
+<p>Once we build the index, we should then be able to run a boolean
+query as follows (in exactly the same manner
+as <code>BooleanRetrieval</code> in Bespin</a>):</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BooleanRetrievalCompressed \
+   -index cs451-lintool-a3-index-shakespeare -collection data/Shakespeare.txt \
+   -query "outrageous fortune AND"
+
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BooleanRetrievalCompressed \
+   -index cs451-lintool-a3-index-shakespeare -collection data/Shakespeare.txt \
+   -query "white red OR rose AND pluck AND"
+</pre>
+
+<p>Of course, we will try your program with additional queries to
+verify its correctness.</p>
+
+<p>Answer the following question:</p>
+
+<p><b>Question 1.</b> What is the size of your compressed
+index for Shakespeare collection? Just so we're using the same units,
+report the output of <code>du -h</code>.</p>
+
+<h4 style="padding-top: 10px">Running on the Altiscale cluster</h4>
+
+<p>Now let's try running your implementation on the Altiscale cluster,
+on the sample Wikipedia
+file <code>/shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt</code>
+on HDFS:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BuildInvertedIndexCompressed \
+   -input /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt \
+   -output cs451-lintool-a3-index-wiki -reducers 4
+</pre>
+
+<p>The Wikipedia sample contains a sentence on each line, so each
+"document" is actually a sentence. Each sentence begins with the
+article title and the sentence id, e.g., "Anarchism.0004" is sentence
+4 from the article "Anarchism".
+
+<p>And let's try running a query:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BooleanRetrievalCompressed \
+   -index cs451-lintool-a3-index-wiki \
+   -collection /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt \
+   -query "waterloo stanford OR cheriton AND"
+
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a3.BooleanRetrievalCompressed \
+   -index cs451-lintool-a3-index-wiki \
+   -collection /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt \
+   -query "big data AND hadoop spark OR AND"
+</pre>
+
+<p>Answer the following questions:</p>
+
+<p><b>Question 2.</b> What is the size of your compressed
+index for the sample Wikipedia collection? Just so we're using the
+same units, report the output of <code>hadoop fs -du -h</code>.</p>
+
+<p><b>Question 3.</b> What are the "documents" (article + sentence)
+retrieved in response to the query <code>"waterloo stanford OR
+cheriton AND"</code>?</p>
+
+<p><b>Question 4.</b> What are the "documents" (article + sentence)
+retrieved in response to the query <code>"big data AND hadoop spark OR
+AND"</code>?</p>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>Make sure your repo has the following items:</p>
+
+<ul>
+
+<li>Similar to the previous assignments, the answers to the questions go
+in <code>bigdata2018w/assignment3.md</code>.</li>
+
+<li>The implementations should be in
+package <code>ca.uwaterloo.cs451.a3</code>.</li>
+
+</ul>
+
+<p>Make sure your implementation runs in the Linux student CS
+environment on the Shakespeare collection and also on sample Wikipedia
+file <code>/shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt</code>
+on HDFS in the Altiscale cluster, per above.</p>
+
+<p>Specifically, we will clone your repo and use the below check
+scripts:</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment3_public_linux.py"><code>check_assignment3_public_linux.py</code></a>
+in the Linux Student CS environment.</li>
+
+<li><a href="assignments/check_assignment3_public_altiscale.py"><code>check_assignment3_public_altiscale.py</code></a> on the Altiscale cluster.</li>
+
+</ul>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", we would
+recommend that you verify everything above works by performing a clean
+clone of your repo and run the public check scripts.</p>
+
+<p>That's it!</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>This assignment is worth a total of 50 points, broken down as
+follows:</p>
+
+<ul>
+
+  <li>Implementation correctness is worth 30 points. Note that the
+  questions above are not explicitly worth any points; they exist
+  primarily to help us gauge your implementation correctness. For
+  example, if your index size is larger than we expect, it's likely
+  you've not applied compression correctly. If your retrieved results
+  do not match ours, it's likely you have a bug in your retrieval
+  implementation.</li>
+
+  <li>Getting your code to compile and successfully run is worth
+  another 10 points (5 points for the Linux student CS environment and
+  5 points on the Altiscale cluster). We will make a minimal effort to
+  fix <i>trivial</i> issues with your code (e.g., a typo)&mdash;and
+  deduct points&mdash;but <b>will not</b> spend time debugging your
+  code. It is your responsibility to make sure your code runs: we have
+  taken care to specify exactly how we will run your code&mdash;if
+  anything is unclear, it is your responsibility to seek
+  clarification.   In
+  order to get a perfect score of 10 for this portion of the grade, we
+  should be able to run the two public check
+  scripts: <a href="assignments/check_assignment3_public_linux.py"><code>check_assignment3_public_linux.py</code></a>
+  (on Linux Student CS)
+  an <a href="assignments/check_assignment3_public_altiscale.py"><code>check_assignment3_public_altiscale.py</code></a>
+  (on Altiscale cluster) successfully without any errors.</li>
+
+  <li>Another 10 points is allotted to us verifying the behavior and
+  output of your program in ways that we will not tell you. We're
+  giving you the "public" versions of the check scripts; we'll run a
+  "private" version to examine your output further (i.e., think blind
+  test cases).</li>
+
+</ul>
 
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
