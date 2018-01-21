@@ -13,7 +13,7 @@ from subprocess import call
 import re
 
 def check_a1(u):
-  """Run Assignment 0 on Altiscale"""
+  """Run Assignment 1 on Altiscale"""
   call(["mvn", "clean", "package"])
 
   call([ "hadoop", "jar", "target/assignments-1.0.jar", "ca.uwaterloo.cs451.a1.PairsPMI",

@@ -4,7 +4,7 @@ CS 451 Data-Intensive Distributed Computing (Winter 2018):
 Assignment 1 public check script for the Linux Student CS environment
 
 Sample usage:
-$ ./check_assignment0_public_linux.py lintool
+$ ./check_assignment1_public_linux.py lintool
 """
 
 import sys
@@ -19,7 +19,7 @@ except ImportError:
   DEVNULL = open(os.devnull, 'wb')
 
 def check_a1(u):
-  """Run Assignment 0 in the Linux Student CS environment"""
+  """Run Assignment 1 in the Linux Student CS environment"""
   call(["mvn", "clean", "package"])
   call([ "hadoop", "jar", "target/assignments-1.0.jar", "ca.uwaterloo.cs451.a1.PairsPMI",
          "-input", "data/Shakespeare.txt",
