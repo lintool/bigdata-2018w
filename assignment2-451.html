@@ -95,7 +95,7 @@ program from <a href="http://bespin.io">Bespin</a> over to Spark (in
 Scala).</li>
 
 <li>"Port" the MapReduce implementations
-of <a href="assignment1-451.html">assignment 1</a> over to Spark (in Scala).</li>
+of <a href="assignment1.html">assignment 1</a> over to Spark (in Scala).</li>
 
 </ol>
 
@@ -108,8 +108,8 @@ package <code>io.bespin.java.mapreduce.bigram</code> (in Java).
 You are welcome to build on the <code>BigramCount</code> (Scala)
 implementation <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/spark/bigram/BigramCount.scala">here</a>
 for tokenization and "boilerplate" code like command-line argument
-parsing. To be consistent in tokenization, you should use the
-<code>Tokenizer</code> trait
+parsing. To be consistent in tokenization, you should copy over
+the <code>Tokenizer</code> trait
 <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/util/Tokenizer.scala">here</a>.</p>
 
 <p>Put your code in the
@@ -130,8 +130,205 @@ much applicable. Your pairs and stripes implementation should follow
 the same logic as in the MapReduce implementations. In particular,
 your program should only take one pass through the input data.</p>
 
+<p>Make sure your implementation runs in the Linux student CS
+environment on the Shakespeare collection and also on sample Wikipedia
+file <code>/shared/cs489/data/enwiki-20161220-sentences-0.1sample.txt</code>
+on HDFS in the Altiscale cluster. See
+the <a href="software.html">software page</a> for how to set up the
+Spark environment on Altiscale.</p>
+
+<p>You can verify the correctness of your algorithm by comparing the
+output of the MapReduce implementation with your Spark
+implementation.</p>
+
+<p>Clarification on terminology: informally, we often refer to
+"mappers" and "reducers" in the context of Spark. That's a shorthand
+way of saying map-like transformations
+(<code>map</code>, <code>flatMap</code>, <code>filter</code>, <code>mapPartitions</code>,
+etc.) and reduce-like transformations
+(e.g., <code>reduceByKey</code>, <code>groupByKey</code>, <code>aggregateByKey</code>,
+etc.). Hopefully it's clear from lecture that while Spark represents a
+generalization of MapReduce, the notions of per-record processing
+(i.e., map-like transformation) and grouping/shuffling (i.e.,
+reduce-like transformations) are shared across both frameworks.</p>
+
+<p>We are going to run your code in the Linux student CS environment
+as follows (we will make sure the collection is there):</p>
+
+<pre>
+$ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyPairs \
+   target/assignments-1.0.jar --input data/Shakespeare.txt \
+   --output cs451-lintool-a2-shakespeare-bigrams-pairs --reducers 5
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyStripes \
+   target/assignments-1.0.jar --input data/Shakespeare.txt \
+   --output cs489-2017w-lintool-a2-shakespeare-bigrams-stripes --reducers 5
+</pre>
+
+<p>We are going to run your code on the Altiscale cluster as follows
+(note the addition of the <code>--num-executors</code>
+and <code>--executor-cores</code> options):</p>
+
+<pre>
+$ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyPairs \
+   --num-executors 2 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt \
+   --output cs451-lintool-a2-wiki-bigram-pairs --reducers 8
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyStripes \
+   --num-executors 2 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input /shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt \
+   --output cs451-lintool-a2-wiki-bigram-stripes --reducers 8
+</pre>
+
+<p><b>Important:</b> Make sure that your code accepts the command-line
+parameters above!<p>
+
+<p>When you run a Spark job (in distributed mode), you need to specify how much cluster
+resource to request. The option <code>--num-executors</code> specifies
+the number of executors, each with a certain number of cores specified
+by <code>--executor-cores</code>. So, in the above commands, we
+request a total of 8 workers (2 executors, 4 cores each).</p>
+
+<p>The <code>--reducers</code> flag is the amount of parallelism that
+you set in your program in the reduce stage. If the total number of
+workers is larger than <code>--reducers</code>, some of the workers
+will be sitting idle, since you've allocated more workers for the job
+than the parallelism you've specified in your
+program. If <code>--reducers</code> is larger than the number of
+workers, on the other hand, then your reduce tasks will queue up at
+the workers, i.e., a worker will be assigned more than one reduce
+task. In the above example we set the two equal.</p>
+
+<p>Note that the setting of these two parameters should not affect the
+correctness of your program. The setting above is a reasonable middle
+ground between having your jobs finish in a reasonable amount of time
+and not monopolizing cluster resources.</p>
+
+<p>A related but still orthogonal concept is partitions. Partitions
+describes the physical division of records across workers during
+execution. When reading from HDFS, the number of HDFS blocks
+determines the number of partitions in your RDD. When you apply a
+reduce-like transformation, you can optionally specify the number of
+partitions (or Spark applies a default) &mdash; in this case, the
+number of partitions is equal to the number of reducers.</p>
+
+<h4 style="padding-top: 10px">PMI</h4>
+
+<p>Your starting points for PMI computations in Spark should be your
+solutions to assignment 1.  Write two programs, <code>PairsPMI</code>
+and <code>StripesPMI</code> that go in
+package <code>ca.uwaterloo.cs451.a2</code>,
+in <code>src/main/scala/ca/uwaterloo/cs451/a2/</code>.</p>
+
+<p>There are obviously going to be differences in the MapReduce and
+Spark implementations, but we want you to preserve the "spirit" of the
+"pairs" vs. "stripes" approach in your respective
+implementations. That is, the pairs implementation keeps track of each
+co-occurring counts independently, while the stripes implementation
+groups all co-occurring terms with respect to a term. If you have
+questions, please ask.</p>
+
+<p>We are going to run your code in the Linux student CS environment
+as follows (we will make sure the collection is there):</p>
+
+<pre>
+$ spark-submit --class ca.uwaterloo.cs451.a2.PairsPMI \
+   target/assignments-1.0.jar --input data/Shakespeare.txt \
+   --output cs451-lintool-a2-shakespeare-pmi-pairs --reducers 5 --threshold 10
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
+   target/assignments-1.0.jar --input data/Shakespeare.txt \
+   --output cs451-lintool-a2-shakespeare-pmi-stripes --reducers 5 --threshold 10
+</pre>
+
+<p>We are going to run your code on the Altiscale cluster as follows
+(we'll use the same simple Wikipedia collection
+at <code>/shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt</code>
+from assignment 1):</p>
+
+<pre>
+$ spark-submit --class ca.uwaterloo.cs451.a2.PairsPMI \
+   --num-executors 2 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input /shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt \
+   --output cs451-lintool-a2-wiki-pmi-pairs --reducers 8 --threshold 10
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
+   --num-executors 2 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input /shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt \
+   --output cs451-lintool-a2-wiki-pmi-stripes --reducers 8 --threshold 10
 
 
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.PairsPMI \
+   --num-executors 4 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input data/Shakespeare.txt --output cs451-lintool-a2-shakespeare-pmi-pairs --reducers 5 --threshold 10
+
+$ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
+   --num-executors 4 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
+   --input data/Shakespeare.txt --output cs451-lintool-a2-shakespeare-pmi-stripes --reducers 5 --threshold 10
+</pre>
+
+<p>Hints:</p>
+
+<ul>
+  <li>Use broadcast variables.</li>
+  <li>Spark accumulators may be helpful</li>
+</ul>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>All implementations should be in
+package <code>ca.uwaterloo.cs451.a2</code>; your
+Scala code should be
+in <code>src/main/scala/ca/uwaterloo/cs/bigdata2017w/assignment2/</code>.
+There are no questions to answer in this assignment unless there is
+something you would like to communicate with us, and if so, put it
+in <code>assignment2.md</code>.</p>
+
+<p>When grading, we will pull your repo and build your code:<p>
+
+<pre>
+$ mvn clean package
+</pre>
+
+<p>And run using exactly the commands above. Make sure that your code
+runs in the Linux Student CS environment (even if you do development
+on your own machine), which is where we will be doing the
+grading. "But it runs on my laptop!" will not be accepted as an excuse
+if we can't get your code to run.</p>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", we would
+recommend that you verify everything above works by performing a clean
+clone of your repo and going through the steps above.</p>
+
+<p>That's it!</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>This assignment is worth a total of 40 points, broken down as
+follows:</p>
+
+<ul>
+
+  <li>The bigram relative frequency implementations are worth 20
+  points total, 5 point for each of the following conditions: pairs on
+  Linux Student CS, pairs on Altiscale, stripes on Linux Student CS,
+  stripes on Altiscale.</li>
+
+  <li>The PMI implementations are worth 20 points total, 5 point for
+  each of the following conditions: pairs on Linux Student CS, pairs
+  on Altiscale, stripes on Linux Student CS, stripes on
+  Altiscale.</li>
+
+</ul>
+
+<p>There are no points explicitly for hidden test cases: the points
+are folded into the distribution above.</p>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 

@@ -155,9 +155,10 @@ co-occurrence. For example, if we specify <code>-threshold 10</code>,
 then we are only interested in pairs of words that co-occur in ten or
 more lines.</li>
 
-<li>To reduce the computational complexity of the problem, we are only
-going to consider up to the first 40 words on each line (using the
-definition of "word" below).</li>
+<li>To reduce the computational complexity of the problem (since we're
+generating intermediate data that is quadratic with respect to the
+input), we are only going to consider up to only the first 40 words on
+each line (using the definition of "word" below).</li>
 
 <li>Just so everyone's answer is consistent, please use
 log base 10.</li>
@@ -241,8 +242,208 @@ one-liner, etc.</p>
 
 <h4 style="padding-top: 10px">Running on the Altiscale cluster</h4>
 
-<p>More to come...</p>
+<p>Now, on the Altiscale cluster, run your pairs and stripes
+implementation on the sample Wikipedia collection stored on HDFS
+at <code>/shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt</code>. This
+is a dump
+of <a href="https://simple.wikipedia.org/wiki/Main_Page">"simple"
+Wikipedia</a> that has been tokenized into sentences, one per line. As
+with the Shakespeare collection, we care about co-occurrence on a line
+(which is a sentence in this case).</p>
 
+<p>Make sure your code runs on this larger dataset. Assuming that
+there aren't many competing jobs on the cluster, your programs should
+not take more than 20 minutes to run. For reference, on an idle
+cluster, the reference pairs implementation takes around 6 minutes to run and
+the reference stripes implementation takes around 4 minutes to run.</p>
+
+<p>If your job is taking much longer than that or if it doesn't look
+your job is making obvious progress, then please kill it so it doesn't
+waste resources and slow other people's jobs down. To kill your job,
+first find its application id in the RM webapp, then issue:</p>
+
+<pre>
+$ yarn application -kill application_xxxxxxxxxxxxx_xxxx
+</pre>
+
+<p>Obviously, if the cluster is really
+busy or if there's a long list of queued jobs, your job will take
+longer, so use your judgement here. The only point is: be nice. It's a
+shared resource, and let's not let runaway jobs slow everyone
+down.</p>
+
+<p>One final detail, set your MapReduce job parameters as follows:</p>
+
+<pre>
+job.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 32);
+job.getConfiguration().set("mapreduce.map.memory.mb", "3072");
+job.getConfiguration().set("mapreduce.map.java.opts", "-Xmx3072m");
+job.getConfiguration().set("mapreduce.reduce.memory.mb", "3072");
+job.getConfiguration().set("mapreduce.reduce.java.opts", "-Xmx3072m");
+</pre>
+
+<p>What the last four options do is fairly obvious. The first sets
+the <i>maximum</i> split size to be 32 MB. What effect does that have?
+(Hint, consider the physical execution of MapReduce programs we
+discussed in class)</p>
+
+<p><b>Question 7.</b> (5 points) In the Wikipedia dataset, what are
+the five words that have the highest PMI with "hockey"? And how many
+times do these words co-occur? Use <code>-threshold 50</code>.</p>
+
+<p><b>Question 8.</b> (5 points) Same as above, but with the word
+"data".</p>
+
+<p>It's worth noting again: the Altiscale cluster is a shared
+resource, and how fast your jobs complete will depend on how busy it
+is. You're advised to begin the assignment early as to avoid long job
+queues. "I wasn't able to complete the assignment because there were
+too many jobs running on the cluster" will not be accepted as an
+excuse if your assignment is late.</p>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>Make sure your repo has the following items:</p>
+
+<ul>
+
+<li>Similar to assignment 0, the answers to the questions go
+in <code>bigdata2018w/assignment1.md</code>.</li>
+
+<li>The pairs and stripes implementation should be in
+package <code>ca.uwaterloo.cs451.a1</code>.</li>
+
+</ul>
+
+<p>When grading, we will pull your repo and build your code:<p>
+
+<pre>
+$ mvn clean package
+</pre>
+
+<p>Your code should build successfully. We are then going to check
+your code (both the pairs and stripes implementations).</p>
+
+<p>We're going to run your code on the Linux student CS environment as
+follows (we will make sure the collection is there):</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a1.PairsPMI \
+   -input data/Shakespeare.txt -output cs451-lintool-a1-shakespeare-pairs \
+   -reducers 5 -threshold 10
+
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a1.StripesPMI \
+   -input data/Shakespeare.txt -output cs451-lintool-a1-shakespeare-stripes \
+   -reducers 5 -threshold 10
+</pre>
+
+<p>Make sure that your code runs in the Linux Student CS environment
+(even if you do development on your own machine), which is where we
+will be doing the grading. "But it runs on my laptop!" will not be
+accepted as an excuse if we can't get your code to run.</p>
+
+<p>You can run the above instructions using
+<a href="assignments/check_assignment1_public_linux.py"><code>check_assignment1_public_linux.py</code></a>,
+with something like:</p>
+
+<pre>
+$ wget http://lintool.github.io/bigdata-2018w/assignments/check_assignment1_public_linux.py
+$ chmod +x check_assignment1_public_linux.py
+$ ./check_assignment1_public_linux.py lintool
+</pre>
+
+<p>We're going to run your code on the Altiscale cluster as
+follows:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a1.PairsPMI \
+   -input /shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt -output cs451-lintool-a1-wiki-pairs \
+   -reducers 5 -threshold 50
+
+$ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs451.a1.StripesPMI \
+   -input /shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt -output cs451-lintool-a1-wiki-stripes \
+   -reducers 5 -threshold 50
+</pre>
+
+<p>You can run the above instructions using
+<a href="assignments/check_assignment1_public_altiscale.py"><code>check_assignment1_public_altiscale.py</code></a>,
+with something like:</p>
+
+<pre>
+$ wget http://lintool.github.io/bigdata-2018w/assignments/check_assignment1_public_altiscale.py
+$ chmod +x check_assignment1_public_altiscale.py
+$ ./check_assignment1_public_altiscale.py lintool
+</pre>
+
+<p><b>Important:</b> Make sure that your code accepts the command-line
+parameters above! That is, make sure the check scripts work!<p>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", verify
+everything above works by performing a clean clone of your repo and
+going through the steps above.</p>
+
+<p>That's it! There's no need to send us anything&mdash;we already
+know your username from assignment 0. Note that everything should be
+committed and pushed to origin before the deadline.</p>
+
+<h4 style="padding-top: 10px">Hints</h4>
+
+<ul>
+  <li>Did you take a look at the implementations of bigram relative
+  frequency and co-occurrence matrix computation
+  in <a href="http://bespin.io">Bespin</a>?</li>
+
+  <li>Your solution will likely require more than one MapReduce job.</li>
+
+  <li>You may have to load in "side data"?</li>
+
+  <li>See <a href="https://github.com/lintool/bespin/blob/master/src/main/java/io/bespin/java/mapreduce/cooccur/ComputeCooccurrenceMatrixPairs.java">this example</a> for how to pass in a command-line argument.</li>
+
+  <li>Counters may be useful for... well, counting.</li>
+
+  <li>My <a href="https://github.com/lintool/tools/tree/master/lintools-datatypes/">lintools-datatypes
+  package</a> has <code>Writable</code> datatypes that you might find
+  useful. (Feel free to use, but assignment can be completed
+  without it.)</li>
+
+</ul>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>This assignment is worth a total of 70 points, broken down as
+follows:</p>
+
+<ul>
+
+  <li>The questions above are worth a total of 35 points.</li>
+
+  <li>Getting your code to compile and successfully run is worth
+  another 20 points (5 points each for the pairs and stripes
+  implementation in the Linux student CS environment and on
+  Altiscale). We will make a minimal effort to fix <i>trivial</i>
+  issues with your code (e.g., a typo)&mdash;and deduct
+  points&mdash;but <b>will not</b> spend time debugging your code. It
+  is your responsibility to make sure your code runs: we have taken
+  care to specify exactly how we will run your code&mdash;if anything
+  is unclear, it is your responsibility to seek clarification.  In
+  order to get a perfect score of 16 for this portion of the grade, we
+  should be able to run the two public check
+  scripts: <a href="assignments/check_assignment1_public_linux.py"><code>check_assignment1_public_linux.py</code></a>
+  (on Linux Student CS)
+  an <a href="assignments/check_assignment1_public_altiscale.py"><code>check_assignment1_public_altiscale.py</code></a>
+  (on Altiscale cluster) successfully without any errors.</li>
+
+  <li>Another 15 points is allotted to us verifying the output of your
+  program in ways that we will not tell you. We're giving you the
+  "public" versions of the check scripts; we'll run a "private"
+  version to examine your output further (i.e., think blind test
+  cases).</li>
+
+</ul>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
