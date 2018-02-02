@@ -108,7 +108,7 @@ package <code>io.bespin.java.mapreduce.bigram</code> (in Java).
 You are welcome to build on the <code>BigramCount</code> (Scala)
 implementation <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/spark/bigram/BigramCount.scala">here</a>
 for tokenization and "boilerplate" code like command-line argument
-parsing. To be consistent in tokenization, you should copy over
+parsing. To be consistent in tokenization, you should use (i.e., import)
 the <code>Tokenizer</code> trait
 <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/util/Tokenizer.scala">here</a>.</p>
 
@@ -132,7 +132,7 @@ your program should only take one pass through the input data.</p>
 
 <p>Make sure your implementation runs in the Linux student CS
 environment on the Shakespeare collection and also on sample Wikipedia
-file <code>/shared/cs489/data/enwiki-20161220-sentences-0.1sample.txt</code>
+file <code>/shared/uwaterloo/cs451/data/enwiki-20161220-sentences-0.1sample.txt</code>
 on HDFS in the Altiscale cluster. See
 the <a href="software.html">software page</a> for how to set up the
 Spark environment on Altiscale.</p>
@@ -162,7 +162,7 @@ $ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyPairs
 
 $ spark-submit --class ca.uwaterloo.cs451.a2.ComputeBigramRelativeFrequencyStripes \
    target/assignments-1.0.jar --input data/Shakespeare.txt \
-   --output cs489-2017w-lintool-a2-shakespeare-bigrams-stripes --reducers 5
+   --output cs451-lintool-a2-shakespeare-bigrams-stripes --reducers 5
 </pre>
 
 <p>We are going to run your code on the Altiscale cluster as follows
@@ -257,16 +257,6 @@ $ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
    --num-executors 2 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
    --input /shared/uwaterloo/cs451/data/simplewiki-20161220-sentences.txt \
    --output cs451-lintool-a2-wiki-pmi-stripes --reducers 8 --threshold 10
-
-
-
-$ spark-submit --class ca.uwaterloo.cs451.a2.PairsPMI \
-   --num-executors 4 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
-   --input data/Shakespeare.txt --output cs451-lintool-a2-shakespeare-pmi-pairs --reducers 5 --threshold 10
-
-$ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
-   --num-executors 4 --executor-cores 4 --executor-memory 24G target/assignments-1.0.jar \
-   --input data/Shakespeare.txt --output cs451-lintool-a2-shakespeare-pmi-stripes --reducers 5 --threshold 10
 </pre>
 
 <p>Hints:</p>
@@ -283,7 +273,7 @@ $ spark-submit --class ca.uwaterloo.cs451.a2.StripesPMI \
 <p>All implementations should be in
 package <code>ca.uwaterloo.cs451.a2</code>; your
 Scala code should be
-in <code>src/main/scala/ca/uwaterloo/cs/bigdata2017w/assignment2/</code>.
+in <code>src/main/scala/ca/uwaterloo/cs451/a2/</code>.
 There are no questions to answer in this assignment unless there is
 something you would like to communicate with us, and if so, put it
 in <code>assignment2.md</code>.</p>
@@ -299,6 +289,18 @@ runs in the Linux Student CS environment (even if you do development
 on your own machine), which is where we will be doing the
 grading. "But it runs on my laptop!" will not be accepted as an excuse
 if we can't get your code to run.</p>
+
+<p>Specifically, we will clone your repo and use the below check
+scripts:</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment2_public_linux.py"><code>check_assignment2_public_linux.py</code></a>
+in the Linux Student CS environment.</li>
+
+<li><a href="assignments/check_assignment2_public_altiscale.py"><code>check_assignment2_public_altiscale.py</code></a> on the Altiscale cluster.</li>
+
+</ul>
 
 <p>When you've done everything, commit to your repo and remember to
 push back to origin. You should be able to see your edits in the web
