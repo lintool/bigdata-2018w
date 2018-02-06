@@ -176,7 +176,7 @@ getting an email directly from Altiscale with account information.</p>
 
 </ol>
 
-<p><b>The TL;DR version.</b> Configure your <code>~/.ssh/config file</code> as follows:</p>
+<p><b>The TL;DR version.</b> Configure your <code>~/.ssh/config</code> file as follows:</p>
 
 <pre>
 Host altiscale
@@ -199,7 +199,15 @@ ssh altiscale
 
 <p>That should do it!</p>
 
-<p><b>Running Spark on Altiscale.</b>
+<p><b>Running Spark on Altiscale &mdash; the TL;DR version:</b> Add
+the following lines to you <code>~/.bash_profile</code> to point at
+the correct version of Spark:</p>
+
+<pre>
+SPARK_HOME=/opt/spark-beta
+SPARK_CONF_DIR=/etc/spark-beta
+PATH=$PATH:/opt/spark-beta/bin
+</pre>
 
 <p>For additional details, consult the
 <a href="https://documentation.altiscale.com/spark-2-0-with-altiscale">Altiscale
