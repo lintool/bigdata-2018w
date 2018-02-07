@@ -87,7 +87,413 @@
 
 <h3>Assignment 4 <small>due 2:30pm February 27</small></h3>
 
+<p>For this assignment, you will be working in the same repo as
+before, except that everything should go into the package namespace
+<code>ca.uwaterloo.cs451.a4</code>.</p>
 
+<p>Begin by taking the time to understand
+the <a href="https://github.com/lintool/bespin/tree/master/src/main/java/io/bespin/java/mapreduce/pagerank">PageRank
+reference implementation</a> in <a href="http://bespin.io">Bespin</a>
+(particularly <code>RunPageRankBasic</code>).  For this assignment,
+you are going to implement multiple-source personalized PageRank. As
+we discussed in class, personalized PageRank is different from
+ordinary PageRank in a few respects:</p>
+
+<ul>
+
+  <li>There is the notion of a <i>source</i> node, which is what we're
+  computing the personalization with respect to.</li>
+
+  <li>When initializing PageRank, instead of a uniform distribution
+  across all nodes, the source node gets a mass of one and every other
+  node gets a mass of zero.</li>
+
+  <li>Whenever the model makes a random jump, the random jump is
+  always back to the source node; this is unlike in ordinary PageRank,
+  where there is an equal probability of jumping to any node.</li>
+
+  <li>All mass lost in the dangling nodes are put back into the source
+  node; this is unlike in ordinary PageRank, where the missing mass is
+  evenly distributed across all nodes.</li>
+
+</ul>
+
+<p>Here are some publications about personalized PageRank if you're
+interested. They're just provided for background; neither is necessary
+for completing the assignment.</p>
+
+<ul>
+
+  <li>Daniel Fogaras, Balazs Racz, Karoly Csalogany, and Tamas Sarlos. (2005) <a href="assignments/Fogaras_etal_2005.pdf">Towards Scaling Fully Personalized PageRank: Algorithms, Lower Bounds, and Experiments.</a> Internet Mathematics, 2(3):333-358.</li>
+
+  <li>Bahman Bahmani, Abdur Chowdhury, and Ashish Goel. (2010) <a href="assignments/Bahmani_etal_VLDB2010.pdf">Fast Incremental and Personalized PageRank.</a> Proceedings of the 36th International Conference on Very Large Data Bases (VLDB 2010).</li>
+
+
+</ul>
+
+<p>Your implementation is going to run multiple personalized PageRank
+computations in parallel, one with respect to each source. The sources
+will be specified on the command line. This means that each
+PageRank node object (i.e., <code>Writable</code>) is going to contain
+an array of PageRank values.</p>
+
+<p>Start by working with the Gnutella graph
+(a <a href="http://snap.stanford.edu/data/p2p-Gnutella08.html">snapshot</a>
+of the Gnutella peer-to-peer file sharing network from August 2002),
+the same as the one used in the Bespin demo:</p>
+
+<pre>
+$ mkdir data
+$ curl http://lintool.github.io/bespin-data/p2p-Gnutella08-adj.txt > data/p2p-Gnutella08-adj.txt
+</pre>
+
+<p>Here's how the implementation is going to work: it largely follows
+the reference implementation of <code>RunPageRankBasic</code>. You
+must make your implementation work with respect to the command-line
+invocations specified below.</p>
+
+<p>First, convert the adjacency list into PageRank node records:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.BuildPersonalizedPageRankRecords \
+   -input data/p2p-Gnutella08-adj.txt -output cs451-lintool-a4-Gnutella-PageRankRecords \
+   -numNodes 6301 -sources 367,249,145
+</pre>
+
+<p>The <code>-sources</code> option specifies the source nodes for the
+personalized PageRank computations. In this case, we're running three
+computations in parallel, with respect to node ids 367, 249, and
+145. You can expect the option value to be in the form of a
+comma-separated list, and that all node ids actually exist in the
+graph. The list of source nodes may be arbitrarily long, but for
+practical purposes we won't test your code with more than a few.</p>
+
+<p>Since we're running three personalized PageRank computations in
+parallel, each PageRank node is going to hold an array of three
+values, the personalized PageRank values with respect to the first
+source, second source, and third source. You can expect the array
+positions to correspond exactly to the position of the node id in the
+source string.</p>
+
+<p>Next, partition the graph (hash partitioning) and get ready to
+iterate:</p>
+
+<pre>
+$ hadoop fs -mkdir cs451-lintool-a4-Gnutella-PageRank
+
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.PartitionGraph \
+   -input cs451-lintool-a4-Gnutella-PageRankRecords \
+   -output cs451-lintool-a4-Gnutella-PageRank/iter0000 -numPartitions 5 -numNodes 6301
+</pre>
+
+<p>After setting everything up, iterate multi-source personalized
+PageRank:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.RunPersonalizedPageRankBasic \
+   -base cs451-lintool-a4-Gnutella-PageRank -numNodes 6301 -start 0 -end 20 -sources 367,249,145
+</pre>
+
+<p>Note that the sources are passed in from the command-line
+again. Here, we're running twenty iterations.</p>
+
+<p>Finally, run a program to extract the top ten personalized PageRank
+values, with respect to each source.</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.ExtractTopPersonalizedPageRankNodes \
+   -input cs451-lintool-a4-Gnutella-PageRank/iter0020 -output cs451-lintool-a4-Gnutella-PageRank-top10 \
+   -top 10 -sources 367,249,145
+</pre>
+
+<p>The above program should print the following answer to stdout:</p>
+
+<pre>
+Source: 367
+0.35257 367
+0.04181 264
+0.03889 266
+0.03888 559
+0.03883 5
+0.03860 1317
+0.03824 666
+0.03817 7
+0.03799 4
+0.00850 249
+
+Source: 249
+0.34089 249
+0.04034 251
+0.03721 762
+0.03688 123
+0.03686 250
+0.03668 753
+0.03627 755
+0.03623 351
+0.03622 983
+0.00949 367
+
+Source: 145
+0.36937 145
+0.04195 1317
+0.04120 265
+0.03847 390
+0.03606 367
+0.03566 246
+0.03525 667
+0.03519 717
+0.03513 149
+0.03496 2098
+</pre>
+
+<h4 style="padding-top: 10px">Additional Specifications</h4>
+
+<p>To make the final output easier to read, in the
+class <code>ExtractTopPersonalizedPageRankNodes</code>, use the
+following format to print each (personalized PageRank value, node id)
+pair:</p>
+
+<pre>
+String.format("%.5f %d", pagerank, nodeid)
+</pre>
+
+<p>This will generate the final results in the same format as
+above. Also note: print actual probabilities, not log
+probabilities&mdash;although during the actual PageRank computation
+keep values as log probabilities.</p>
+
+<p>The final class <code>ExtractTopPersonalizedPageRankNodes</code>
+does not need to be a MapReduce job (but it does need to read from
+HDFS). Obviously, the other classes need to run MapReduce jobs.</p>
+
+<p>The reference implementation of PageRank in Bespin has many
+options: you can either use in-mapper combining or ordinary
+combiners. In your implementation, use ordinary combiners.
+Also, the reference implementation has
+an option to either use range partitioning or hash partitioning: you
+only need to implement hash partitioning. You can start with the
+reference implementation and remove code that you don't need (see #2
+below).</p>
+
+<h4 style="padding-top: 10px">Hints and Suggestion</h4>
+
+<p>To help you out, there's a small helper program in Bespin that
+computes personalized PageRank using a sequential algorithm. Use it to
+check your answers:</p>
+
+<pre>
+$ hadoop jar target/bespin-1.0.2-SNAPSHOT-fatjar.jar io.bespin.java.mapreduce.pagerank.SequentialPersonalizedPageRank \
+   -input data/p2p-Gnutella08-adj.txt -source 367
+</pre>
+
+<p>Note that this isn't actually a MapReduce job; we're simply using
+Hadoop to run the <code>main</code> for convenience. The values from
+your implementation should be pretty close to the output of the above
+program, but might differ a bit due to convergence issues. After 20
+iterations, the output of the MapReduce implementation should match to
+at least the fourth decimal place.</p>
+
+<p>This is a complex assignment. We would suggest breaking the
+implementation into the following steps:</p>
+
+<ol>
+
+<li>First, copy the reference PageRank implementation into your own
+assignments repo (renaming the classes appropriately). Make sure you
+can get it to run and output the correct results with ordinary
+PageRank.</li>
+
+<li>Simplify the code; i.e., if you decide to use the in-mapper
+combiner, remove the code that works with ordinary combiners.</li>
+
+<li>Implement personalized PageRank from a single source; that is, if
+the user sets option <code>-sources w,x,y,z</code>, simply
+ignore <code>x,y,z</code> and run personalized PageRank with respect
+to <code>w</code>. This can be accomplished with the
+existing <code>PageRankNode</code>, which holds a single floating
+point value.</li>
+
+<li>Extend the <code>PageRankNode</code> class to store an array of
+floats (length of array is the number of sources) instead of a single
+float. Make sure single-source personalized PageRank still runs.</li>
+
+<li>Implement multi-source personalized PageRank.</li>
+
+</ol>
+
+<p>In particular, #3 is a nice checkpoint. If you're not able to get
+the multiple-source personalized PageRank to work, at least completing
+the single-source implementation will allow us to give you partial
+credit.</p>
+
+<h4 style="padding-top: 10px">Running on the Altiscale cluster</h4>
+
+<p>Once you get your implementation working and debugged in the Linux
+environment, you're going to run your code on a non-trivial graph: the
+link structure of (all of) Wikipedia. The adjacency lists are stored
+in <code>/shared/uwaterloo/cs451/data/wiki-adj</code> on HDFS. The graph has
+16,117,779 vertices and 155,472,640 edges.</p>
+
+<p>First, convert the adjacency list into PageRank node records:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.BuildPersonalizedPageRankRecords \
+   -input /shared/uwaterloo/cs451/data/wiki-adj -output cs451-lintool-a4-wiki-PageRankRecords \
+   -numNodes 16117779 -sources 73273,73276
+</pre>
+
+<p>Next, partition the graph (hash partitioning) and get ready to
+iterate:</p>
+
+<pre>
+$ hadoop fs -mkdir cs451-lintool-a4-wiki-PageRank
+
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.PartitionGraph \
+   -input cs451-lintool-a4-wiki-PageRankRecords \
+   -output cs451-lintool-a4-wiki-PageRank/iter0000 -numPartitions 10 -numNodes 16117779
+</pre>
+
+<p>After setting everything up, iterate multi-source
+personalized PageRank:</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.RunPersonalizedPageRankBasic \
+   -base cs451-lintool-a4-wiki-PageRank -numNodes 16117779 -start 0 -end 20 -sources 73273,73276
+</pre>
+
+<p>On the Altiscale cluster, each iteration shouldn't take more than a
+couple of minutes to complete. If it's taking more than five minutes
+per iteration, you're doing something wrong.</p>
+
+<p>Finally, run a program to extract the top ten personalized PageRank
+values, with respect to each source.</p>
+
+<pre>
+$ hadoop jar target/assignments-1.0.jar \
+   ca.uwaterloo.cs451.a4.ExtractTopPersonalizedPageRankNodes \
+   -input cs451-lintool-a4-wiki-PageRank/iter0020 -output cs451-lintool-a4-wiki-PageRank-top10 \
+   -top 10 -sources 73273,73276
+</pre>
+
+<p>In the example above, we're running personalized PageRank with
+respect to two sources: 73273 and 73276. What articles do these ids
+correspond to? There's a file on HDFS
+at <code>/shared/uwaterloo/cs451/data/wiki-titles.txt</code> that provides the
+answer. How do you know if your implementation is correct? You can
+sanity check your results by taking the ids and looking up the
+articles that they correspond to. Do the results make sense?</p>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>Make sure your repo has the following items:</p>
+
+<ul>
+
+<li>Similar to the previous assignments, you'll create a file
+called <code>bigdata2018w/assignment4.md</code> (more below).</li>
+
+<li>All the implementations described above should be in
+package <code>ca.uwaterloo.cs451.a4</code>.</li>
+
+</ul>
+
+<p>Make sure your implementation runs in the Linux student CS
+environment on the Gnutella graph and on the Wikipedia graph on the
+Altiscale cluster.</p>
+
+<p>In <code>bigdata2018w/assignment4.md</code>, tell us if you were
+able to successfully complete the assignment. This is in case we can't
+get your code to run, we need to know if it is because you weren't able
+to complete the assignment successfully, or if it is due to some other
+issue. If you were not able to implement everything, describe how far
+you've gotten. Feel free to use this space to tell us additional
+things we should look for in your implementation.</p>
+
+<p>Also, in this file, copy the output of your implementation on the
+Altiscale cluster, i.e., personalized PageRank with respect to
+vertices 73273 and 73276. This will give us something to look at and
+check if we can't get your code to run successfully. Something that
+looks like this:</p>
+
+<pre>
+Source: 73273
+0.XXXXX XXX
+...
+
+Source: 73276
+0.XXXXX XXX
+...
+</pre>
+
+<p>When grading, we will clone your repo and use the below check
+scripts:</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment4_public_linux.py"><code>check_assignment4_public_linux.py</code></a>
+in the Linux Student CS environment.</li>
+
+<li><a href="assignments/check_assignment4_public_altiscale.py"><code>check_assignment4_public_altiscale.py</code></a>
+on the Altiscale cluster.</li>
+
+</ul>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", we would
+recommend that you verify everything above works by performing a clean
+clone of your repo and run the public check scripts.</p>
+
+<p>That's it!</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>The entire assignment is worth 55 points:
+
+<ul>
+
+<li>A correct implementation of single-source personalized PageRank is
+worth 10 points.</li>
+
+<li>That we are able to run the single-source personalized PageRank
+implementation in the Linux Student CS environment is worth 5
+points.</li>
+
+<li>A correct implementation of multiple-source personalized PageRank
+is worth 15 points.</li>
+
+<li>That we are able to run the multiple-source personalized PageRank
+implementation in the Linux Student CS environment is worth 5
+points.</li>
+
+<li>Scaling the single-source personalized PageRank implementation on
+Altiscale is worth 10 points.</li>
+
+<li>Scaling the multiple-source personalized PageRank implementation
+on Altiscale is worth 10 points.</li>
+
+</ul>
+
+<p>In our private check scripts, we will specify arbitrary source
+nodes to verify the correctness of your implementation.</p>
+
+<p>Note that this grading scheme discretizes each component of the
+assignment. For example, if you implement everything and it works
+correctly on the Linux Student CS environment, but can't get it to
+scale on the Altiscale cluster to the larger graph, you'll receive 35
+out of 55 points. On the other hand, if you implement single-source
+personalized PageRank correctly and it runs in both the Linux Student
+CS environment and Altiscale, you will receive 25 out of 55
+points. And combinations thereof.</p>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
