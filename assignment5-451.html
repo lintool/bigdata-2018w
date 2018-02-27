@@ -158,7 +158,7 @@ Parquet data. More details will be provided below.</p>
 query does: if there are any ambiguities in the language, you can
 always assume that the SQL query is correct. Your implementation of each query will
 be a separate Spark program. Put your code in the package
-<code>ca.uwaterloo.cs.cs451.a5</code>, in the
+<code>ca.uwaterloo.cs451.a5</code>, in the
 same repo that you've been working in all semester. Since you'll be
 writing Scala code, your source files should go into
 <code>src/main/scala/ca/uwaterloo/cs451/a5/</code>.</p>
@@ -173,7 +173,7 @@ select count(*) from lineitem where l_shipdate = 'YYYY-MM-DD';
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q1 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q1 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -192,7 +192,7 @@ format.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q1 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q1 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
@@ -223,7 +223,7 @@ order by o_orderkey asc limit 20;
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q2 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q2 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -244,7 +244,7 @@ here as well.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q2 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q2 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
@@ -271,7 +271,7 @@ order by l_orderkey asc limit 20;
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q3 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q3 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -292,7 +292,7 @@ here as well.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q3 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q3 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
@@ -320,7 +320,7 @@ order by n_nationkey asc;
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q4 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q4 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -334,7 +334,7 @@ here as well.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q4 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q4 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
@@ -359,7 +359,7 @@ Generate this graph for your boss.</p>
 command (on plain text):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q5 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q5 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --text
 </pre>
 
@@ -372,7 +372,7 @@ parentheses.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q5 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q5 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --parquet
 </pre>
 
@@ -405,7 +405,7 @@ group by l_returnflag, l_linestatus;
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q6 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q6 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -419,7 +419,7 @@ here as well.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q6 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q6 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
@@ -459,7 +459,7 @@ limit 10;
 command (on the plain-text data):</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q7 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q7 \
   target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
 </pre>
 
@@ -473,7 +473,7 @@ format <code>YYYY-MM-DD</code> and that it is a valid date.</p>
 <p>And the Parquet version:</p>
 
 <pre>
-spark-submit --class ca.uwaterloo.cs.cs451.a5.Q7 \
+spark-submit --class ca.uwaterloo.cs451.a5.Q7 \
   target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
 </pre>
 
