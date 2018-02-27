@@ -87,6 +87,401 @@
 
 <h3>Assignment 5 <small>due 2:30pm March 8</small></h3>
 
+<p>In this assignment you'll be hand-crafting Spark programs that
+implement SQL queries in a data warehousing scenario. Various
+SQL-on-Hadoop solutions share in providing an SQL query interface on
+data stored in HDFS via an intermediate execution framework. For
+example, Hive queries are "compiled" into MapReduce jobs; SparkSQL
+queries rely on Spark processing primitives for query execution. In
+this assignment, you'll play the role of mediating between SQL queries
+and the underlying execution framework (Spark). In more detail, you'll
+be given a series of SQL queries, and for each you'll have to
+hand-craft a Spark program that corresponds to each query.</p>
+
+<p><b>Important:</b> You are not allowed to use the Dataframe API or
+Spark SQL to complete this assignment (with the exception of loading Parquet files, see "hints" below). 
+You must write code to manipulate raw RDDs.
+Furthermore, you are not allowed to use <code>join</code> and
+closely-related transformations in Spark for this assignment, because
+otherwise it defeats the point of the exercise. The assignment will
+guide you toward what we are looking for, but if you have any
+questions as to what is allowed or not, ask!</p>
+
+<p>We will be working with data from the TPC-H benchmark in this
+assignment. The Transaction Processing Performance Council (TPC) is a
+non-profit organization that defines various database benchmarks so
+that database vendors can evaluate the performance of their products
+fairly. TPC defines the "rules of the game", so to speak. TPC defines
+various benchmarks, of which one is TPC-H, for evaluating ad-hoc
+decision support systems in a data warehousing scenario. The current
+version of the TPC-H benchmark is located
+<a href="assignments/tpc-h_v2.17.1.pdf">here</a>. You'll want to skim
+through this (long) document; the most important part is the
+entity-relationship diagram of the data warehouse on page
+13. Throughout the assignment you'll likely be referring to it, as it
+will help you make sense of the queries you are running.</p>
+
+<p>The TPC-H benchmark comes with a data generator, and we have
+generated some data for you:
+
+<ul>
+
+  <li><a href="assignments/TPC-H-0.1-TXT.tar.gz"><code>TPC-H-0.1-TXT.tar.gz</code></a>:
+  the plain-text version of the data</li>
+
+  <li><a href="assignments/TPC-H-0.1-PARQUET.tar.gz"><code>TPC-H-0.1-PARQUET.tar.gz</code></a>:
+  the Parquet version of the data</li>
+
+</ul>
+
+<p>Download and unpack the datasets above. In the first part of the
+assignment where you will be working with Spark locally, you will run
+your queries against both datasets.</p>
+
+<p>For the plain-text version of the data, you will see a number of
+text files, each corresponding to a table in the TPC-H schema. The
+files are delimited by <code>|</code>. You'll notice that some of the
+fields, especially the text fields, are gibberish&mdash;that's normal,
+since the contents are randomly generated.</p>
+
+<p>The Parquet data has the same content, but is encoded in
+Parquet.</p>
+
+<p>Implement the following seven SQL queries, running on
+the <code>TPC-H-0.1-TXT</code> plain-text data as well as
+the <code>TPC-H-0.1-PARQUET</code> Parquet data. For each query you
+will write a program that takes the option <code>--text</code> to work
+with the plain-text data and <code>--parquet</code>to work with the
+Parquet data. More details will be provided below.</p>
+
+<p>Each SQL query is accompanied by a written description of what the
+query does: if there are any ambiguities in the language, you can
+always assume that the SQL query is correct. Your implementation of each query will
+be a separate Spark program. Put your code in the package
+<code>ca.uwaterloo.cs.cs451.a5</code>, in the
+same repo that you've been working in all semester. Since you'll be
+writing Scala code, your source files should go into
+<code>src/main/scala/ca/uwaterloo/cs451/a5/</code>.</p>
+
+<p><b>Q1:</b> How many items were shipped on a particular date? This corresponds to the following SQL query:
+
+<pre>
+select count(*) from lineitem where l_shipdate = 'YYYY-MM-DD';
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q1 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed), in a line that matches
+the following regular expression:</p>
+
+<pre>
+ANSWER=\d+
+</pre>
+
+<p>The output of the query can contain logging and debug information,
+but there must be a line with the answer in <b>exactly</b> the above
+format.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q1 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>In both cases, the value of the
+<code>--input</code> argument is the directory that contains the
+data (either in plain text or in Parquet). The value of the <code>--date</code> argument
+corresponds to the <code>l_shipdate</code> predicate in the where
+clause in the SQL query. You need to anticipate dates of the
+form <code>YYYY-MM-DD</code>, <code>YYYY-MM</code>, or
+just <code>YYYY</code>, and your query needs to give the correct
+answer depending on the date format. You can assume that a valid date
+(in one of the above formats) is provided, so you do not need to
+perform input validation.</p>
+
+<p><b>Q2:</b> Which clerks were responsible for processing items that
+were shipped on a particular date? List the first 20 by order
+key. This corresponds to the following SQL query:</p>
+
+<pre>
+select o_clerk, o_orderkey from lineitem, orders
+where
+  l_orderkey = o_orderkey and
+  l_shipdate = 'YYYY-MM-DD'
+order by o_orderkey asc limit 20;
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q2 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed), as a sequence of tuples
+in the following format:</p>
+
+<pre>
+(o_clerk,o_orderkey)
+(o_clerk,o_orderkey)
+...
+</pre>
+
+<p>That is, each tuple is comma-delimited and surrounded by
+parentheses. Everything described in <b>Q1</b> about dates applies
+here as well.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q2 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>In the design of this data warehouse, the <code>lineitem</code>
+and <code>orders</code> tables are not likely to fit in
+memory. Therefore, the only scalable join approach is the reduce-side
+join. You must implement this join in Spark using
+the <code>cogroup</code> transformation.</p>
+
+<p><b>Q3:</b> What are the names of parts and suppliers of items
+shipped on a particular date? List the first 20 by order key. This
+corresponds to the following SQL query:</p>
+
+<pre>
+select l_orderkey, p_name, s_name from lineitem, part, supplier
+where
+  l_partkey = p_partkey and
+  l_suppkey = s_suppkey and
+  l_shipdate = 'YYYY-MM-DD'
+order by l_orderkey asc limit 20;
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q3 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed), as a sequence of tuples
+in the following format:</p>
+
+<pre>
+(l_orderkey,p_name,s_name)
+(l_orderkey,p_name,s_name)
+...
+</pre>
+
+<p>That is, each tuple is comma-delimited and surrounded by
+parentheses. Everything described in <b>Q1</b> about dates applies
+here as well.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q3 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>In the design of this data warehouse, it is assumed that
+the <code>part</code> and <code>supplier</code> tables will fit in
+memory. Therefore, it is possible to implement a hash join. For this
+query, you must implement a hash join in Spark with broadcast
+variables.</p>
+
+<p><b>Q4:</b> How many items were shipped to each country on a
+particular date? This corresponds to the following SQL query:</p>
+
+<pre>
+select n_nationkey, n_name, count(*) from lineitem, orders, customer, nation
+where
+  l_orderkey = o_orderkey and
+  o_custkey = c_custkey and
+  c_nationkey = n_nationkey and
+  l_shipdate = 'YYYY-MM-DD'
+group by n_nationkey, n_name
+order by n_nationkey asc;
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q4 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed). Format
+the output in the same manner as with the above queries: one tuple per
+line, where each tuple is comma-delimited and surrounded by
+parentheses. Everything described in <b>Q1</b> about dates applies
+here as well.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q4 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>Implement this query with different join techniques as you see
+fit. You can assume that the <code>lineitem</code>
+and <code>orders</code> table will not fit in memory, but you can
+assume that the <code>customer</code> and <code>nation</code> tables
+will both fit in memory. For this query, the performance as well as
+the scalability of your implementation will contribute to the
+grade.</p>
+
+<p><b>Q5:</b> This query represents a very simple end-to-end ad hoc
+analysis task: Related to <b>Q4</b>, your boss has asked you to
+compare shipments to Canada vs. the United States by month, given all
+the data in the data warehouse. You think this request is best
+fulfilled by a line graph, with two lines (one representing the US and
+one representing Canada), where the <i>x</i>-axis is the year/month and
+the <i>y</i> axis is the volume, i.e., <code>count(*)</code>.
+Generate this graph for your boss.</p>
+
+<p>First, write a program such that when we execute the following
+command (on plain text):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q5 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --text
+</pre>
+
+<p>the raw data necessary for the graph will be printed to stdout (on the
+console where the above command is executed).
+Format the output in the same manner as with the above queries: one
+tuple per line, where each tuple is comma-delimited and surrounded by
+parentheses.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q5 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --parquet
+</pre>
+
+<p>Next, create this actual graph: use whatever tool you are
+comfortable with, e.g., Excel, gnuplot, etc.</p>
+
+<p><b>Q6:</b> This is a slightly modified version of TPC-H Q1 "Pricing
+Summary Report Query". This query reports the amount of business that
+was billed, shipped, and returned:</p>
+
+<pre>
+select
+  l_returnflag,
+  l_linestatus,
+  sum(l_quantity) as sum_qty,
+  sum(l_extendedprice) as sum_base_price,
+  sum(l_extendedprice*(1-l_discount)) as sum_disc_price,
+  sum(l_extendedprice*(1-l_discount)*(1+l_tax)) as sum_charge,
+  avg(l_quantity) as avg_qty,
+  avg(l_extendedprice) as avg_price,
+  avg(l_discount) as avg_disc,
+  count(*) as count_order
+from lineitem
+where
+  l_shipdate = 'YYYY-MM-DD'
+group by l_returnflag, l_linestatus;
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q6 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed). Format
+the output in the same manner as with the above queries: one tuple per
+line, where each tuple is comma-delimited and surrounded by
+parentheses. Everything described in <b>Q1</b> about dates applies
+here as well.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q6 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>Implement this query as efficiently as you can, using all of the
+optimizations we discussed in lecture. You will only get full points
+for this question if you exploit all the optimization opportunities
+that are available.</p>
+
+<p><b>Q7:</b> This is a slightly modified version of TPC-H Q3
+"Shipping Priority Query".  This query retrieves the 10 unshipped
+orders with the highest value:</p>
+
+<pre>
+select
+  c_name,
+  l_orderkey,
+  sum(l_extendedprice*(1-l_discount)) as revenue,
+  o_orderdate,
+  o_shippriority
+from customer, orders, lineitem
+where
+  c_custkey = o_custkey and
+  l_orderkey = o_orderkey and
+  o_orderdate < "YYYY-MM-DD" and
+  l_shipdate > "YYYY-MM-DD"
+group by
+  c_name,
+  l_orderkey,
+  o_orderdate,
+  o_shippriority
+order by
+  revenue desc
+limit 10;
+</pre>
+
+<p>Write a program such that when we execute the following
+command (on the plain-text data):</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q7 \
+  target/assignments-1.0.jar --input TPC-H-0.1-TXT --date '1996-01-01' --text
+</pre>
+
+<p>the answer to the above SQL query will be printed to stdout (on the
+console where the above command is executed).
+Format the output in the same manner as with the above queries: one
+tuple per line, where each tuple is comma-delimited and surrounded by
+parentheses. Here you can assume that the date argument is only in the
+format <code>YYYY-MM-DD</code> and that it is a valid date.</p>
+
+<p>And the Parquet version:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs.cs451.a5.Q7 \
+  target/assignments-1.0.jar --input TPC-H-0.1-PARQUET --date '1996-01-01' --parquet
+</pre>
+
+<p>Implement this query as efficiently as you can, using all of the
+optimizations we discussed in lecture. Plan joins as you see fit,
+keeping in mind above assumptions on what will and will not fit in
+memory. You will only get full points for this question if you exploit
+all the optimization opportunities that are available.</p>
 
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
