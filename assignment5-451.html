@@ -483,6 +483,237 @@ keeping in mind above assumptions on what will and will not fit in
 memory. You will only get full points for this question if you exploit
 all the optimization opportunities that are available.</p>
 
+<h4 style="padding-top: 10px">Scaling up on Altiscale</h4>
+
+<p>Once you get your implementation working and debugged in the Linux
+environment, run your code on a larger TCP-H dataset, located on HDFS:
+
+<ul>
+
+<li><code>/shared/uwaterloo/cs451/data/TPC-H-10-TXT</code> for the plain-text data</li>
+<li><code>/shared/uwaterloo/cs451/data/TPC-H-10-PARQUET</code> for the Parquet data</li>
+
+</ul>
+
+<p>Make sure that all seven queries above run correctly on this larger
+dataset. For your reference, the the command-line parameters
+for Q1-Q7 are provided below (so you can copy and paste).</p>
+
+<p><b>Important:</b> Note that for this assignment
+for <code>spark-submit</code> we set <code>--deploy-mode
+client</code>. This will force the driver to run on the client (i.e.,
+workspace), so that you will see the output
+of <code>println</code>. Otherwise, the driver will run on an
+arbitrary cluster node, making stdout not directly visible. Also, we
+redirect stdout to a file so that it'll be easier to view the
+output.</p>
+
+<p><b>Q1:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q1 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q1t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q1 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q1p.out
+</pre>
+
+<p><b>Q2:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q2 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q2t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q2 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q2p.out
+</pre>
+
+<p><b>Q3:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q3 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q3t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q3 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q3p.out
+</pre>
+
+<p><b>Q4:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q4 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q4t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q4 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q4p.out
+</pre>
+
+<p><b>Q5:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q5 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT --text > q5t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q5 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET --parquet > q5p.out
+</pre>
+
+<p><b>Q6:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q6 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q6t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q6 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q6p.out
+</pre>
+
+<p><b>Q7:</b></p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a5.Q7 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-TXT \
+ --date '1996-01-01' --text > q7t.out
+
+spark-submit --class ca.uwaterloo.cs451.a5.Q7 --deploy-mode client \
+ --num-executors 4 --executor-cores 4 --executor-memory 32G --driver-memory 2g \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/TPC-H-10-PARQUET \
+ --date '1996-01-01' --parquet > q7p.out
+</pre>
+
+<p>In this configuration, your programs shouldn't take more than a
+couple of minutes. If it's taking more than five minutes, you're
+probably doing something wrong.</p>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>Make sure your repo has the following items:</p>
+
+<ul>
+
+<li>Optional: put anything that you want to convey to us about your
+implementation in <code>bigdata2018w/assignment5.md</code>.</li>
+
+<li>Two files,
+named <code>bigdata2018w/assignment5-Q5-small.pdf</code>
+and <code>bigdata2018w/assignment5-Q5-large.pdf</code> that contains
+the graphs for Q5 on the <code>TPC-H-0.1-TXT</code>
+and <code>TPC-H-10-TXT</code> datasets, respectively. If you cannot
+easily generate PDFs, the files should be some easily-viewable format,
+e.g., <code>png</code>, <code>gif</code>, etc.</li>
+
+<li>Your implementations for the queries should be in
+package <code>ca.uwaterloo.cs451.a5</code>. There
+should be at the minimum seven classes (Q1-Q7), but you may include
+helper classes as you see fit.</li>
+
+</ul>
+
+<p>Make sure your implementation runs in the Linux student CS
+environment on <code>TPC-H-0.1-TXT</code>, and on the Alitscale
+cluster on the <code>TPC-H-10-TXT</code> data.</p>
+
+<p>Specifically, we will clone your repo and use the below check
+scripts:</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment5_public_linux.py"><code>check_assignment5_public_linux.py</code></a>
+in the Linux Student CS environment.</li>
+
+<li><a href="assignments/check_assignment5_public_altiscale.py"><code>check_assignment5_public_altiscale.py</code></a>
+on the Altiscale cluster.</li>
+
+</ul>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", we would
+recommend that you verify everything above works by performing a clean
+clone of your repo and run the public check scripts.</p>
+
+<p>That's it!</p>
+
+<h4 style="padding-top: 10px">Hints</h4>
+
+<p>The easiest way to read Parquet is to use the Dataframe API, as
+follows:</p>
+
+<pre>
+import org.apache.spark.sql.SparkSession
+
+val sparkSession = SparkSession.builder.getOrCreate
+
+val lineitemDF = sparkSession.read.parquet("TPC-H-0.1-PARQUET/lineitem")
+val lineitemRDD = lineitemDF.rdd
+</pre>
+
+<p>Once you read in the table as as dataframe, convert it into an RDD
+and work from there.</p>
+
+<p>You are not allowed to use Spark SQL in your implementations for
+this assignment, but I have no problem if you use Spark SQL
+to <i>check</i> your answers.</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>The entire assignment is worth 100 points:</p>
+
+<ul>
+
+  <li>Getting your code to compile is worth 10 points (by now, these
+  should be "free" points).</li>
+
+  <li>For Q1-Q3, each query is worth 10 points: 5 points for a correct
+  implementation that works in the Linux Student CS environment (both
+  on plain text and Parquet), 5 points for a correct implementation
+  that works on the Altiscale cluster (both on plain text and
+  Parquet).</li>
+
+  <li>Q4 and Q5 are each worth 14 points: 7 points for a correct
+  implementation that works in the Linux Student CS environment (both
+  on plain text and Parquet), 7 points for a correct implementation
+  that works on the Altiscale cluster (both on plain text and
+  Parquet).</li>
+
+  <li>Q6 and Q7 are each worth 16 points: 8 points for a correct
+  implementation that works in the Linux Student CS environment (both
+  on plain text and Parquet), 8 points for a correct implementation
+  that works on the Altiscale cluster (both on plain text and
+  Parquet).</li>
+
+</ul>
+
+<p>A working implementation means that your code gives the right
+output according to our private check scripts, which will
+contain <code>--date</code> parameters that are unknown to you (but
+will nevertheless conform to our specifications above).</p>
+
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
