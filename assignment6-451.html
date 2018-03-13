@@ -87,7 +87,188 @@
 
 <h3>Assignment 6 <small>due 2:30pm March 27</small></h3>
 
+<p>In this assignment, you will build a spam classifier trained using
+stochastic gradient descent in Spark, replicating the work described
+in <a href="http://arxiv.org/abs/1004.5168">Efficient and Effective
+Spam Filtering and Re-ranking for Large Web Datasets</a> by Cormack,
+Smucker, and Clarke. We will draw your attention to specific sections
+of the paper that are directly pertinent to the assignment, but you
+should read the entire paper for background.</p>
 
+<h4 style="padding-top: 10px">Downloading Data</h4>
+
+<p>If you're working on your laptop, grab the training and test data:</p>
+
+<pre>
+wget https://www.student.cs.uwaterloo.ca/~cs451/spam/spam.train.group_x.txt.bz2
+wget https://www.student.cs.uwaterloo.ca/~cs451/spam/spam.train.group_y.txt.bz2
+wget https://www.student.cs.uwaterloo.ca/~cs451/spam/spam.train.britney.txt.bz2
+wget https://www.student.cs.uwaterloo.ca/~cs451/spam/spam.test.qrels.txt.bz2
+</pre>
+
+<p>Otherwise, the datasets are at <code>~cs451/public_html/spam/</code> in the 
+Linux Student CS environment.</p>
+
+<p>Just to verify what you've downloaded:</p>
+
+<div style="width: 50%">
+<table class="table table-striped">
+<thead><tr><td><b>File</b></td><td><b>MD5</b></td><td><b>Size</b></td></tr></thead>
+<tr><td><code>spam.train.group_x.txt.bz2</code></td><td><code>947faf932afee7e35d79e7da10fe0e3e</code></td><td>5.5 MB</td></tr>
+<tr><td><code>spam.train.group_y.txt.bz2</code></td><td><code>7cf45c3666915999f1048aafeff4c60e</code></td><td>6.6 MB</td></tr>
+<tr><td><code>spam.train.britney.txt.bz2</code></td><td><code>bad2e4ccaed7482f9e99e65e58c6beda</code></td><td>248 MB</td></tr>
+<tr><td><code>spam.test.qrels.txt.bz2</code></td><td><code>99858d9dd1b40e994732a641703859ec</code></td><td>303 MB</td></tr>
+</table>
+</div>
+
+<p>After you've downloaded the data, unpack:</p>
+
+<pre>
+bunzip2 spam.train.group_x.txt.bz2
+bunzip2 spam.train.group_y.txt.bz2
+bunzip2 spam.train.britney.txt.bz2
+bunzip2 spam.test.qrels.txt.bz2
+</pre>
+
+<p>Verify the unpacked data:</p>
+
+<div style="width: 50%">
+<table class="table table-striped">
+<thead><tr><td><b>File</b></td><td><b>MD5</b></td><td><b>Size</b></td></tr></thead>
+<tr><td><code>spam.train.group_x.txt</code></td><td><code>d6897ed8319c71604b1278b660a479b6</code></td><td>25 MB</td></tr>
+<tr><td><code>spam.train.group_y.txt</code></td><td><code>4d103821fdf369be526347b503655da5</code></td><td>20 MB</td></tr>
+<tr><td><code>spam.train.britney.txt</code></td><td><code>b52d54caa20325413491591f034b5e7b</code></td><td>766 MB</td></tr>
+<tr><td><code>spam.test.qrels.txt</code></td>   <td><code>df1d26476ec41fec625bc2eb9969875c</code></td><td>1.1 GB</td></tr>
+</table>
+</div>
+
+<p>Next, download the two files you'll need for evaluating the output of
+the spam classifier (links below):</p>
+
+<ul>
+
+<li><a href="assignments/compute_spam_metrics.c"><code>compute_spam_metrics.c</code></a></li>
+
+<li><a href="assignments/spam_eval.sh"><code>spam_eval.sh</code></a></li>
+
+<li><a href="assignments/spam_eval_hdfs.sh"><code>spam_eval_hdfs.sh</code></a></li>
+
+</ul>
+
+<p>Compile the C program:</p>
+
+<pre>
+gcc -O2 -o compute_spam_metrics compute_spam_metrics.c -lm
+</pre>
+
+<p>You might get some warnings but don't worry&mdash;the code should
+compile fine. The actual evaluation script <code>spam_eval.sh</code>
+(and <code>spam_eval_hdfs.sh</code>)
+calls <code>compute_spam_metrics</code>, so make sure they're in the
+same directory.</p>
+
+<p>Note on local vs. Altiscale: for this assignment, your code must
+(eventually) work in Altiscale, but feel free to develop locally or in
+the Linux Student CS environment. The instructions below are written
+for running locally, but in a separate section later we will cover
+details specific to Altiscale.</p>
+
+<h4 style="padding-top: 10px">Basic Spam Classifier</h4>
+
+<p>In this assignment, we'll take you through building spam
+classifiers of increasing complexity, but let's start with a basic
+implementation using stochastic gradient descent. Build the spam
+classifier in <b>exactly</b> the way we describe below, because later
+parts of the assignment will depend on the setup.</p>
+
+<p>First, let's write the classifier trainer. The classifier trainer
+takes all the training instances, runs stochastic gradient descent,
+and produces a model as output.</p>
+
+<p>Look at the Cormack, Smucker, and Clarke paper:
+the entire algorithm is literally 34 lines of C, shown in Figure 2 on
+page 10. The stochastic gradient descent update equations are in
+equations (11) and (12) on page 11. We actually made things <i>even
+simpler</i> for you: the features used in the spam classifier are
+hashed byte 4-grams (thus, integers)&mdash;we've pre-computed the
+features for you.</p>
+
+<p>Take a look at <code>spam.train.group_x.txt</code>. The first line
+begins as follows:</p>
+
+<pre>
+clueweb09-en0094-20-13546 spam 387908 697162 426572 161118 688171 ...
+</pre>
+
+<p>In the file, each training instance is on a line. Each line begins
+with a document id, the string "spam" or "ham" (the label), and a list
+of integers (the features).</p>
+
+<p>Therefore, your spam classifier will look something like this:</p>
+
+<pre>
+// w is the weight vector (make sure the variable is within scope)
+val w = Map[Int, Double]()
+
+// Scores a document based on its list of features.
+def spamminess(features: Array[Int]) : Double = {
+  var score = 0d
+  features.foreach(f => if (w.contains(f)) score += w(f))
+  score
+}
+
+// This is the main learner:
+val delta = 0.002
+
+// For each instance...
+val isSpam = ...   // label
+val features = ... // feature vector of the training instance
+
+// Update the weights as follows:
+val score = spamminess(features)
+val prob = 1.0 / (1 + exp(-score))
+features.foreach(f => {
+  if (w.contains(f)) {
+    w(f) += (isSpam - prob) * delta
+  } else {
+    w(f) = (isSpam - prob) * delta
+   }
+})
+</pre>
+
+<p>We've given you the code fragment for the learner above as a
+starting point&mdash;it's your job to understand exactly how it works
+and turn it into a complete classifier trainer in Spark.</p>
+
+<p>For the structure of the Spark trainer program, take a look at
+slide 13 in the <a href="slides/didp-part06b.pdf#page=13">Part 06b, slide 13</a>
+deck. We're going to build the configuration shown there (even though
+the slide says MapReduce, we're implementing it in
+Spark). Specifically, we're going run a single reducer to make sure we
+pump all the training instances through a single learner on the
+reducer end. The overall structure of your program is going to look
+something like this:</p>
+
+<pre>
+val textFile = sc.textFile("/path/to/training/data")
+
+val trained = textFile.map(line =>{
+  // Parse input
+  // ..
+  (0, (docid, isSpam, features))
+  }).groupByKey(1)
+  // Then run the trainer...
+
+trained.saveAsTextFile(...)
+</pre>
+
+<p>Note the mappers are basically just parsing the feature vectors and
+pushing them over to the reducer side for additional processing. We
+emit "0" as a "dummy key" to make sure all the training instances get
+collected at the reducer end via <code>groupByKey()</code>... after
+which you run the trainer (which applies the SGD updates, per
+above). Of course, it's your job to figure out how to connect the
+pieces together. This is the crux of the assignment.</p>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
