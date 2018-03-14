@@ -111,7 +111,7 @@ Linux Student CS environment.</p>
 
 <p>Just to verify what you've downloaded:</p>
 
-<div style="width: 50%">
+<div style="width: 75%">
 <table class="table table-striped">
 <thead><tr><td><b>File</b></td><td><b>MD5</b></td><td><b>Size</b></td></tr></thead>
 <tr><td><code>spam.train.group_x.txt.bz2</code></td><td><code>947faf932afee7e35d79e7da10fe0e3e</code></td><td>5.5 MB</td></tr>
@@ -132,7 +132,7 @@ bunzip2 spam.test.qrels.txt.bz2
 
 <p>Verify the unpacked data:</p>
 
-<div style="width: 50%">
+<div style="width: 75%">
 <table class="table table-striped">
 <thead><tr><td><b>File</b></td><td><b>MD5</b></td><td><b>Size</b></td></tr></thead>
 <tr><td><code>spam.train.group_x.txt</code></td><td><code>d6897ed8319c71604b1278b660a479b6</code></td><td>25 MB</td></tr>
@@ -269,6 +269,380 @@ collected at the reducer end via <code>groupByKey()</code>... after
 which you run the trainer (which applies the SGD updates, per
 above). Of course, it's your job to figure out how to connect the
 pieces together. This is the crux of the assignment.</p>
+
+<p>Putting everything together, you will write a trainer program
+called <code>TrainSpamClassifier</code> that we will execute in the
+following manner:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.TrainSpamClassifier \
+ target/assignments-1.0.jar --input spam.train.group_x.txt --model cs451-lintool-a6-model-group_x
+</pre>
+
+<p>The <code>--input</code> option specifies the input training
+instances (from above); the <code>--model</code> option specifies the
+output directory where the model goes. Inside the model
+directory <code>cs451-lintool-a6-model-group_x</code>, there
+should be a single file, <code>part-00000</code>, that contains the
+trained model. The trained model should be a sequence of tuples, one
+on each line; each tuple should contain a feature and its weight (a
+double value). Something like:</p>
+
+<pre>
+$ head -5 cs451-lintool-a6-model-group_x/part-00000
+(547993,2.019484093190069E-4)
+(577107,5.255371091500805E-5)
+(12572,-4.40967560913553E-4)
+(270898,-0.001340150007664197)
+(946531,2.560528666942676E-4)
+</pre>
+
+<p>Next, you will write another Spark program
+named <code>ApplySpamClassifier</code> that will apply the trained spam
+classifier to the test instances. That is, the program will read in
+each input instance, compute the spamminess score (from above), and
+make a prediction: if the spamminess score is above 0, classify the
+document as spam; otherwise, classify the document as ham.</p>
+
+<p>We will run the program in the following manner:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.ApplySpamClassifier \
+ target/assignments-1.0.jar --input spam.test.qrels.txt \
+ --output cs451-lintool-a6-test-group_x --model cs451-lintool-a6-model-group_x
+</pre>
+
+<p>The <code>--input</code> option specifies the input test instances;
+the <code>--model</code> option specifies the classifier model; and
+the <code>--output</code> option specifies the output directory.  The
+test data is organized in exactly the same way as the training data.
+The output of <code>ApplySpamClassifier</code> should be organized as
+follows:</p>
+
+<pre>
+$ cat cs451-lintool-a6-test-group_x/* | sort | head -5
+(clueweb09-en0000-00-00142,spam,2.601624279252943,spam)
+(clueweb09-en0000-00-01005,ham,2.5654162439491004,spam)
+(clueweb09-en0000-00-01382,ham,2.5893946346394188,spam)
+(clueweb09-en0000-00-01383,ham,2.6190102258752614,spam)
+(clueweb09-en0000-00-03449,ham,1.500142758578532,spam)
+</pre>
+
+<p>The first field in each tuple is the document id and the second
+field is the test label. These are just copied from the
+test data. The third field is the spamminess score, and the fourth
+field is the classifier's prediction.</p>
+
+<p><b>Important:</b> It is absolutely critical that your
+classifier <b>does not</b> use the label in the test data when making its
+predictions. The only reason the label is included in the
+output is to facilitate evaluation (see below).</p>
+
+<p>Finally, you can evaluate your results:</p>
+
+<pre>
+$ ./spam_eval.sh cs451-lintool-a6-test-group_x
+1-ROCA%: 17.25
+</pre>
+
+<p>The eval script prints the evaluation metric, which is the area under the
+receiver operating characteristic (ROC) curve. This is a common way to
+characterize classifier error. The lower this score, the better.</p>
+
+<p>If you've done everything correctly up until now, you should be
+able to replicate the above results.</p>
+
+<p>You should then be able to train on the <code>group_y</code> training set:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.TrainSpamClassifier \
+ target/assignments-1.0.jar --input spam.train.group_y.txt --model cs451-lintool-a6-model-group_y
+</pre>
+
+<p>And make predictions:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.ApplySpamClassifier \
+ target/assignments-1.0.jar --input spam.test.qrels.txt \
+ --output cs451-lintool-a6-test-group_y --model cs451-lintool-a6-model-group_y
+</pre>
+
+<p>And evaluate:</p>
+
+<pre>
+$ ./spam_eval.sh cs451-lintool-a6-test-group_y
+1-ROCA%: 12.82
+</pre>
+
+<p>Finally, train on the <code>britney</code> training set:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.TrainSpamClassifier \
+ target/assignments-1.0.jar --input spam.train.britney.txt --model cs451-lintool-a6-model-britney
+</pre>
+
+<p>And make predictions:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.ApplySpamClassifier \
+ target/assignments-1.0.jar --input spam.test.qrels.txt \
+ --output cs451-lintool-a6-test-britney --model cs451-lintool-a6-model-britney
+</pre>
+
+<p>And evaluate:</p>
+
+<pre>
+$ ./spam_eval.sh cs451-lintool-a6-test-britney
+1-ROCA%: 15.96
+</pre>
+
+<p>There may be some non-determinism in running over
+the <code>britney</code> dataset, so you might get something slightly
+different.</p>
+
+<p>Here's a placeholder for question 1 that you're going to answer
+below (see Altiscale section).</p>
+
+<h4 style="padding-top: 10px">Ensemble Spam Classifier</h4>
+
+<p>Next, let's build an ensemble classifier. Start by gathering all
+the models from each of the individual classifiers into a common
+directory:</p>
+
+<pre>
+mkdir cs451-lintool-a6-model-fusion
+cp cs451-lintool-a6-model-group_x/part-00000 cs451-lintool-a6-model-fusion/part-00000
+cp cs451-lintool-a6-model-group_y/part-00000 cs451-lintool-a6-model-fusion/part-00001
+cp cs451-lintool-a6-model-britney/part-00000 cs451-lintool-a6-model-fusion/part-00002
+</pre>
+
+<p>With these three separate classifiers, implement two different
+ensemble techniques:</p>
+
+<ul>
+  <li>Score averaging: Average the spamminess score from each
+  individual classifier. If the average score is above 0, classify the
+  document as spam; otherwise, classify the document as ham.</li>
+
+  <li>Voting: Each classifier gets a vote on spam/ham. Majority
+  wins. The spamminess score in this case is # spam - # ham (so the
+  possible scores are -3, -1, 1, 3).</li>
+
+</ul>
+
+<p>Write a program <code>ApplyEnsembleSpamClassifier</code> that we
+will execute in the following manner:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.ApplyEnsembleSpamClassifier \
+ target/assignments-1.0.jar --input spam.test.qrels.txt \
+ --output cs451-lintool-a6-test-fusion-average --model cs451-lintool-a6-model-fusion --method average
+</pre>
+
+<p>The <code>--input</code> option specifies the input test instances.
+The <code>--model</code> option specifies the base directory of all
+the classifier models; in this directory your program should expect
+each individual model in a <code>part-XXXXX</code> file; it's okay to
+hard code the part files for convenience. The <code>--output</code>
+option specifies the output directory. Finally,
+the <code>--method</code> option specifies the ensemble technique,
+either "average" or "vote" per above.</p>
+
+<p>Your prediction program needs to load all three models, apply the
+specified ensemble technique, and make predictions. Hint: Spark
+broadcast variables are helpful in this implementation.</p>
+
+<p>The output format of the predictions should be the same as the
+output of the <code>ApplySpamClassifier</code> program. You should be
+able to evaluate with <code>spam_eval.sh</code> in the same way. Go
+ahead and predict with the two ensemble techniques and evaluate the
+predictions. Note that ensemble techniques can sometimes improve on
+the best classifier; sometimes not.</p>
+
+<p>Here's a placeholder for questions 2 and 3 that you're going to
+answer below (see Altiscale section).</p>
+
+<p>How does the ensemble compare to just concatenating all the
+training data together and training a single classifier? Let's find
+out:</p>
+
+<pre>
+cat spam.train.group_x.txt spam.train.group_y.txt spam.train.britney.txt > spam.train.all.txt
+</pre>
+
+<p>Now train on this larger test set, predict, and evaluate.</p>
+
+<p>Here's a placeholder for question 4 that you're going to answer
+below (see Altiscale section).</p>
+
+<h4 style="padding-top: 10px">The Effects of Data Shuffling</h4>
+
+<p>In class, we talked about how a model trained using stochastic
+gradient descent is dependent on the order in which the training
+instances are presented to the trainer. Let's explore this effect.</p>
+
+<p>Modify the <code>TrainSpamClassifier</code> to implement a new
+option <code>--shuffle</code>. With this option, the program will
+randomly shuffle the training instances before running the
+trainer:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.TrainSpamClassifier \
+ target/assignments-1.0.jar --input spam.train.britney.txt --model cs451-lintool-a6-model-britney-shuffle --shuffle
+</pre>
+
+<p>You <i>must</i> shuffle the data using Spark. The way to accomplish
+this in Spark is to generate a random number for each instance and
+then sort the instances by the value. That is, you <i>cannot</i>
+simply read all the training instances into memory in the driver,
+shuffle, and then parallelize.</p>
+
+<p>Obviously, the addition of the <code>--shuffle</code> option should
+not break existing functionality; that is, without the option, the
+program should behave exactly as before.</p>
+
+<p>Note that in this case we're working with the <code>britney</code>
+data because the two other datasets have very few
+examples&mdash;random shuffles can lead to weird idiosyncratic
+effects.</p>
+
+<p>You should be able to evaluate the newly trained model in exactly
+the same way as above. If you are getting a wildly different 1-ROCA%
+scores each time, you're doing something wrong.</p>
+
+<p>Here's a placeholder for question 5 that you're going to answer
+below (see Altiscale section).</p>
+
+<h4 style="padding-top: 10px">Running on Altiscale</h4>
+
+<p>You are free to develop locally on your own machine or in the Linux
+Student CS environment (and in fact, the instructions above assume
+so), but you must make sure that your code runs in Altiscale
+also. This is just to verify that your Spark programs will work in a
+distributed environment, and that you are not inadvertently taking
+advantage of some local feature.</p>
+
+<p>All training and test data are located
+in <code>/shared/uwaterloo/cs451/data/</code> on HDFS. Note that
+<code>spam.train.all.txt</code> has already been prepared for you in
+that directory also.</p>
+
+<p>For example, training, predicting, and evaluating on
+the <code>group_x</code> dataset in Altiscale:</p>
+
+<pre>
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.TrainSpamClassifier \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/spam.train.group_x.txt \
+ --model cs451-lintool-a6-model-group_x
+
+spark-submit --driver-memory 2g --class ca.uwaterloo.cs451.a6.ApplySpamClassifier \
+ target/assignments-1.0.jar --input /shared/uwaterloo/cs451/data/spam.test.qrels.txt \
+ --output cs451-lintool-a6-test-group_x --model cs451-lintool-a6-model-group_x
+
+./spam_eval_hdfs.sh cs451-lintool-a6-test-group_x
+</pre>
+
+<p>The major differences are:</p>
+
+<ul>
+  <li>Location of the training/test data (on HDFS).</li>
+  <li>All input/output from/to HDFS.</li>
+  <li>Use of <code>spam_eval_hdfs.sh</code> for the evaluation script.</li>
+</ul>
+
+<p>Refer back to the placeholders above and answer the following
+questions, <i>running your code on the Altiscale cluster</i>:</p>
+
+<p><b>Question 1:</b> For each individual classifiers trained
+on <code>group_x</code>, <code>group_y</code>,
+and <code>britney</code>, what are the 1-ROCA% scores? You should be
+able to replicate our results
+on <code>group_x</code>, <code>group_y</code>, but there may be some
+non-determinism for <code>britney</code>, which is why we want you to
+report the figures.</p>
+
+<p><b>Question 2:</b> What is the 1-ROCA% score of the score averaging
+technique in the 3-classifier ensemble?</p>
+
+<p><b>Question 3:</b> What is the 1-ROCA% score of the voting
+technique in the 3-classifier ensemble?</p>
+
+<p><b>Question 4:</b> What is the 1-ROCA% score of a single classifier
+trained on all available training data concatenated together?</p>
+
+<p><b>Question 5:</b> Run the shuffle trainer 10 times on
+the <code>britney</code> dataset, predict and evaluate the classifier
+on the test data each time. Report the 1-ROCA% score in each of the
+ten trials and compute the overall average.</p>
+
+<h4 style="padding-top: 10px">Turning in the Assignment</h4>
+
+<p>Please follow these instructions carefully!</p>
+
+<p>Make sure your repo has the following items:</p>
+
+<ul>
+
+<li>Put the answers to all the questions above
+in <code>bigdata2018w/assignment6.md</code>.</li>
+
+<li>Your implementations should go in
+package <code>ca.uwaterloo.cs451.a6.assignment6</code>. At the minimum, you should have
+<code>TrainSpamClassifier</code>, <code>ApplySpamClassifier</code>,
+and <code>ApplyEnsembleSpamClassifier</code>. Feel free to include helper code also.</li>
+
+</ul>
+
+<p>Make sure your implementation runs on the Altiscale cluster. The
+following check script is provided for you (check the source for the relevant flags):</p>
+
+<ul>
+
+<li><a href="assignments/check_assignment6_public.py"><code>check_assignment6_public.py</code></a></li>
+
+
+</ul>
+
+<p>When you've done everything, commit to your repo and remember to
+push back to origin. You should be able to see your edits in the web
+interface. Before you consider the assignment "complete", we would
+recommend that you verify everything above works by performing a clean
+clone of your repo and run the public check scripts.</p>
+
+<p>That's it!</p>
+
+<h4 style="padding-top: 10px">Grading</h4>
+
+<p>The entire assignment is worth 60 points:</p>
+
+<ul>
+
+  <li>Getting your code to compile is worth 4 points.</li>
+
+  <li>A correct implementation of the
+  basic <code>TrainSpamClassifier</code> is worth 15 points.</li>
+
+  <li>A correct implementation of <code>ApplySpamClassifier</code> is
+  worth 5 points.</li>
+
+  <li>A correct implementation
+  of <code>ApplyEnsembleSpamClassifier</code> is worth 6 points.</li>
+
+  <li>A correct implementation of the <code>--shuffle</code> option
+  in <code>TrainSpamClassifier</code> is worth 5 points.</li>
+
+  <li>The answers to questions 1-5 are worth 3 points each.</li>
+
+  <li>Being able to successfully run all your code on Altiscale is
+  worth 10 points. We will begin by testing all your code on
+  Altiscale. If everything works there, you will get full marks. If we
+  can't get your code to run successfully on Altiscale, we will try
+  running your code in the Linux Student CS environment, as part of
+  confirming that the implementations above are correct. However, if
+  your code works in the Linux Student CS environment but not on
+  Altiscale, you will still receive zero marks for this item.</li>
+
+</ul>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
