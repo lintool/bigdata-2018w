@@ -87,6 +87,180 @@
 
 <h3>Assignment 7 <small>due 2:30pm April 3</small></h3>
 
+<p>In this assignment, you'll be playing with Spark Streaming. Unlike
+the previous assignments that involve a substantial amount of
+implementation, the goal of this assignment is to give you some
+exposure to Spark Streaming without getting into too much detail. In
+other words, this assignment is easier and less time-consuming that
+previous assignments, by design.</p>
+
+<p>We'll be working with a dataset released by the New York City Taxi
+&amp; Limousine Commission that captures over one billion individual
+taxi trips over the past several years. This assignment is inspired by
+Todd Schneider's very nice blog post
+titled <a href="http://toddwschneider.com/posts/analyzing-1-1-billion-nyc-taxi-and-uber-trips-with-a-vengeance/">Analyzing
+1.1 Billion NYC Taxi and Uber Trips, with a Vengeance</a> (worth a
+read!). You can find the raw
+data <a href="http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml">here</a>.
+The dataset is historic, but we're going to treat it as a data stream
+and perform simple analyses using Spark Streaming.</p>
+
+<p>Since the dataset is 100s of GB and too large for an assignment,
+we're going to work with a small one day slice, but that should be
+sufficient to give you a flavor of what Spark Streaming is like. The
+slice of the dataset is stored in
+the <a href="https://github.com/lintool/bespin-data"><code>bespin-data</code></a>
+repo. Go ahead and grab the data.</p>
+
+<p>For this assignment, since the dataset is small, everything can be
+done in the Linux Student CS environment. That is, there is no
+Altiscale component for this assignment. We'll be marking your
+assignment in the Linux Student CS environment, and you can assume
+that we will supply the correct path to this dataset.</p>
+
+<p>Here's what the dataset looks like:</p>
+
+<pre>
+$ head -1 taxi-data/part-2015-12-01-0001.csv 
+yellow,1,2015-12-01 00:01:00,2015-12-01 00:03:16,1,.30,-73.980049133300781,40.743148803710938,1,N,-73.976577758789063,40.747837066650391,2,3.5,0.5,0.5,0,0,0.3,4.8
+</pre>
+
+<p>The schema is as follows:</p>
+
+<pre>
+type,VendorID,tpep_pickup_datetime,tpep_dropoff_datetime,passenger_count,trip_distance,pickup_longitude,pickup_latitude,RatecodeID,store_and_fwd_flag,dropoff_longitude,dropoff_latitude,payment_type,fare_amount,extra,mta_tax,tip_amount,tolls_amount,improvement_surcharge,total_amount
+</pre>
+
+<p>Each part file contains one minute worth of trips,
+so for the entire day there are 1440 part files. Each one of these
+become a discretized stream to Spark streaming.</p>
+
+<p>Let's start with a very simple query that aggregates the number of
+trips by hour. We've implemented this for you in Bespin
+in <a href="https://github.com/lintool/bespin/blob/master/src/main/scala/io/bespin/scala/spark/streaming/EventCount.scala"><code>EventCount</code></a>.
+Here's how you run it:</p>
+
+<pre>
+spark-submit --class io.bespin.scala.spark.streaming.EventCount \
+ target/bespin-1.0.4-SNAPSHOT-fatjar.jar --input taxi-data --checkpoint checkpoint --output output
+</pre>
+
+<p>The Spark Streaming query itself is simple:</p>
+
+<pre>
+    val wc = stream.map(_.split(","))
+      .map(tuple => ("all", 1))
+      .reduceByKeyAndWindow(
+        (x: Int, y: Int) => x + y, (x: Int, y: Int) => x - y, Minutes(60), Minutes(60))
+      .persist()
+</pre>
+
+<p>Your first task is to understand exactly what's going on the above
+snippet of code: consult
+the <a href="https://spark.apache.org/streaming/">Spark Streaming
+documentation</a>, or alternatively, there are plenty of resources
+online &mdash; a simple search will turn up lots of articles and
+guides.</p>
+
+<p>Beyond the query itself, the implementation goes through a bunch of
+contortions to be able to mock a stream using data from files. There
+are a whole host of details, including how to mock a clock so we can
+simulate the passage of time. The implementation is based
+on <a href="http://blog.ippon.tech/testing-strategy-for-spark-streaming/">this
+blog post</a> if you are interested in the details.</p>
+
+<p>The output of each aggregation window is stored in a directory
+named <code>output-XXXXX</code> where <code>XXXXX</code> is the
+timestamp. The following command will gather all the results
+together:</p>
+
+<pre>
+$ find output-* -name "part*" | xargs grep 'all' | sed -E 's/^output-([0-9]+)\/part-[0-9]+/\1/' | sort -n
+3600000:(all,8824)
+7200000:(all,5170)
+10800000:(all,3302)
+14400000:(all,2369)
+18000000:(all,2577)
+21600000:(all,4550)
+25200000:(all,12151)
+28800000:(all,21447)
+32400000:(all,24936)
+36000000:(all,23321)
+39600000:(all,20942)
+43200000:(all,20350)
+46800000:(all,20298)
+50400000:(all,20820)
+54000000:(all,22554)
+57600000:(all,21314)
+61200000:(all,17521)
+64800000:(all,21284)
+68400000:(all,26201)
+72000000:(all,27147)
+75600000:(all,26756)
+79200000:(all,26533)
+82800000:(all,23087)
+86400000:(all,14286)
+</pre>
+
+<p>There are 24 aggregation windows above, one for each hour.</p>
+
+<p><b>Problem 1</b>: Copy <code>EventCount</code> from Bespin into
+your assignment repo under the
+package <code>ca.uwaterloo.cs451.a7</code>. We should now be able to
+run the following and obtain exactly the same results as above:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a7.EventCount \
+ target/assignments-1.0.jar --input taxi-data --checkpoint checkpoint --output output
+</pre>
+
+<p>In your <code>pom.xml</code>, you'll need to bump up the version of
+Bespin to pull in the Spark Streaming dependencies:</p>
+
+<pre>
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.bespin&lt;/groupId&gt;
+      &lt;artifactId&gt;bespin&lt;/artifactId&gt;
+      &lt;version&gt;1.0.3&lt;/version&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+</pre>
+
+<p><b>Problem 2</b>: Create a query
+called <code>RegionEventCount</code> that counts the number of taxi
+trips each hour that drop off at either the Goldman Sachs headquarters
+or the Citigroup headquarters. See the 
+<a href="http://toddwschneider.com/posts/analyzing-1-1-billion-nyc-taxi-and-uber-trips-with-a-vengeance/">Todd
+Schneider blog post</a> for context: you're replicating one a
+simplified version of one of his analyses. Use these coordinates for
+the bounding box of interest:</p>
+
+<pre>
+goldman = [[-74.0141012, 40.7152191], [-74.013777, 40.7152275], [-74.0141027, 40.7138745], [-74.0144185, 40.7140753]]
+citigroup = [[-74.011869, 40.7217236], [-74.009867, 40.721493], [-74.010140,40.720053], [-74.012083, 40.720267]]
+</pre>
+
+<p>To be more precise, you are filtering for taxi trips whose drop off
+locations are located within this bounding box and aggregating by
+hour. This means that we should be able to run the following job:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a7.RegionEventCount \
+ target/assignments-1.0.jar --input taxi-data --checkpoint checkpoint --output output
+</pre>
+
+<p>And the following command should gather the answers:</p>
+
+<pre>
+$ find output-* -name "part*" | xargs grep 'goldman' | sed -E 's/^output-([0-9]+)\/part-[0-9]+/\1/' | sort -n
+...
+
+$ find output-* -name "part*" | xargs grep 'citigroup' | sed -E 's/^output-([0-9]+)\/part-[0-9]+/\1/' | sort -n
+...
+</pre>
+
+<p>Use exactly "goldman" and "citigroup" for the names of the keys.</p>
 
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
