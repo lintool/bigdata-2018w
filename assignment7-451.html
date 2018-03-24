@@ -106,7 +106,7 @@ The dataset is historic, but we're going to treat it as a data stream
 and perform simple analyses using Spark Streaming.</p>
 
 <p>Since the dataset is 100s of GB and too large for an assignment,
-we're going to work with a small one day slice, but that should be
+we're going to work with a small one-day slice, but that should be
 sufficient to give you a flavor of what Spark Streaming is like. The
 slice of the dataset is stored in
 the <a href="https://github.com/lintool/bespin-data"><code>bespin-data</code></a>
@@ -131,9 +131,9 @@ green,2,2015-12-01 00:01:03,2015-12-01 00:01:29,N,1,-73.937652587890625,40.80454
 type,VendorID,tpep_pickup_datetime,tpep_dropoff_datetime,passenger_count,trip_distance,pickup_longitude,pickup_latitude,RatecodeID,store_and_fwd_flag,dropoff_longitude,dropoff_latitude,payment_type,fare_amount,extra,mta_tax,tip_amount,tolls_amount,improvement_surcharge,total_amount
 </pre>
 
-<p>Each part file contains one minute worth of trips,
-so for the entire day there are 1440 part files. Each one of these
-become a discretized stream to Spark streaming.</p>
+<p>Each part file contains one minute worth of trips, so for the
+entire day there are 1440 part files. Each one of these becomes a part
+of a discretized stream to Spark streaming.</p>
 
 <p>Let's start with a very simple query that aggregates the number of
 trips by hour. We've implemented this for you in Bespin
@@ -254,14 +254,74 @@ spark-submit --class ca.uwaterloo.cs451.a7.RegionEventCount \
 
 <pre>
 $ find output-* -name "part*" | xargs grep 'goldman' | sed -E 's/^output-([0-9]+)\/part-[0-9]+/\1/' | sort -n
+21600000:(goldman,?)
+25200000:(goldman,?)
+28800000:(goldman,?)
 ...
 
 $ find output-* -name "part*" | xargs grep 'citigroup' | sed -E 's/^output-([0-9]+)\/part-[0-9]+/\1/' | sort -n
+3600000:(citigroup,?)
+7200000:(citigroup,?)
+10800000:(citigroup,?)
 ...
 </pre>
 
-<p>Use exactly "goldman" and "citigroup" for the names of the keys.</p>
+<p>Use exactly "goldman" and "citigroup" for the names of the
+keys. The actual counts should appear in place of the "?" above.</p>
 
+<p>As a hint, <code>RegionEventCount</code> requires minimal
+modifications over <code>EventCount</code>; basically, add a filter,
+and that's it.</p>
+
+<p><b>Problem 3</b>: Let's build a simple "trend detector" to find out
+when there are lots of arrivals at either Goldman Sachs or Citigroup
+headquarters, defined in terms of the bounding boxes, exactly as
+above. We'll consider intervals of ten minutes, i.e., 6:00 to 6:10,
+6:10 to 6:20, etc. The trend detector should "go off" when there are
+at least twice as many arrivals in the current interval as there are
+in the past interval. To reduce "spurious" detections, we want to make
+sure the detector only "trips" if there are <i>ten or more</i>
+arrivals in the current interval. That is, if there are two arrivals
+in the last ten minute interval and four arrivals in the current ten
+minute interval, that's not particularly interesting (although the
+number of arrival has indeed doubled), so we want to suppress such
+results.</p>
+
+<p>Call this program <code>TrendingArrivals</code>. We'll run it as
+follows:</p>
+
+<pre>
+spark-submit --class ca.uwaterloo.cs451.a7.TrendingArrivals \
+ target/assignments-1.0.jar --input taxi-data --checkpoint checkpoint --output output &> output.log
+</pre>
+
+<p>For simplicity, the detector should output its results
+to <code>stdout</code> in the form of the following:</p>
+
+<pre>
+Number of arrivals to Goldman Sach has doubled from X to Y at Z!
+</pre>
+
+<p>or</p>
+
+<pre>
+Number of arrivals to Citigroup has doubled from X to Y at Z!
+</pre>
+
+<p>Where <code>X</code> and <code>Y</code> are the number of arrivals
+in the previous and current interval, and <code>Z</code> is the
+timestamp of the current interval. These timestamps are exactly the
+same form as above, e.g., <code>21600000</code>.</p>
+
+<p>In other words, when we're marking, we'll be
+grepping <code>output.log</code> for the phrase "Number of arrivals to
+Goldman Sach" and "Number of arrivals to Citigroup", so please make
+sure that the output is in the format we expect.</p>
+
+<p>As a hint, <code>TrendingArrivals</code> is a simple modification
+to <code>RegionEventCount</code>. You'll need to change the window
+definition (from hourly to 10 minutes) and learn how to
+use <code>mapWithState</code>, but that's basically it.</p>
 
 <p style="padding-top: 20px"><a href="#">Back to top</a></p>
 
