@@ -318,6 +318,15 @@ grepping <code>output.log</code> for the phrase "Number of arrivals to
 Goldman Sach" and "Number of arrivals to Citigroup", so please make
 sure that the output is in the format we expect.</p>
 
+<p>Also, the program should output the status for each batch to the directory specified by the `output` argument.
+The following command should gather the answers:
+<pre>
+$ cat output/part-*/* | grep "(citigroup" 
+(citigroup,(${Current value},${Current timestamp},${Previous value}))
+...
+</pre>
+
+
 <p>As a hint, <code>TrendingArrivals</code> is a simple modification
 to <code>RegionEventCount</code>. You'll need to change the window
 definition (from hourly to 10 minutes) and learn how to
