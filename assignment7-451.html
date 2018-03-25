@@ -318,7 +318,8 @@ grepping <code>output.log</code> for the phrase "Number of arrivals to
 Goldman Sachs" and "Number of arrivals to Citigroup", so please make
 sure that the output is in the format we expect.</p>
 
-<p>Also, the program should output the status for each batch to the directory specified by the `output` argument.
+<p>Also, the program should output the status for each batch to the directory specified by the <code>output</code> argument. Each status is stored in a separate file with the name of the format <code>part-${timestamp}</code> where timestamp is a 8-digit string padded with leading zeros. 
+
 The following command should gather the answers:
 <pre>
 $ cat output/part-*/* | grep "(citigroup" 
