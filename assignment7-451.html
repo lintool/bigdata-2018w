@@ -125,11 +125,19 @@ $ head -1 taxi-data/part-2015-12-01-0001.csv
 green,2,2015-12-01 00:01:03,2015-12-01 00:01:29,N,1,-73.937652587890625,40.804546356201172,-73.940483093261719,40.805999755859375,1,.06,2.5,0.5,0.5,0,0,,0.3,3.8,2,1
 </pre>
 
-<p>The schema is as follows:</p>
+<p>There are two types of taxi ride records, Yellow and Green.
+<p>The schema for yellow taxi rides is as follows:</p>
 
 <pre>
 type,VendorID,tpep_pickup_datetime,tpep_dropoff_datetime,passenger_count,trip_distance,pickup_longitude,pickup_latitude,RatecodeID,store_and_fwd_flag,dropoff_longitude,dropoff_latitude,payment_type,fare_amount,extra,mta_tax,tip_amount,tolls_amount,improvement_surcharge,total_amount
 </pre>
+
+<p>The schema for green taxi rides is as follows:</p>
+
+<pre>
+type,VendorID,lpep_pickup_datetime,Lpep_dropoff_datetime,Store_and_fwd_flag,RateCodeID,Pickup_longitude,Pickup_latitude,Dropoff_longitude,Dropoff_latitude,Passenger_count,Trip_distance,Fare_amount,Extra,MTA_tax,Tip_amount,Tolls_amount,Ehail_fee,improvement_surcharge,Total_amount,Payment_type,Trip_type 
+</pre>
+
 
 <p>Each part file contains one minute worth of trips, so for the
 entire day there are 1440 part files. Each one of these becomes a part
